@@ -36,9 +36,9 @@ symfony serve:start
 
 👥 Équipe projet
 
-•	- Lead : Turbo-Teflon (Marwan) (https://github.com/Turbo-Teflon)
-•	- Contributeur : Yoalgrin (Gabriel) (https://github.com/Yoalgrin)
-•	- Contributeur : aurel12321 (Aurélien) (https://github.com/aurel12321)
+•	- Lead : Turbo-Teflon (Marwan) (https://github.com/Turbo-Teflon)  
+•	- Contributeur : Yoalgrin (Gabriel) (https://github.com/Yoalgrin)  
+•	- Contributeur : aurel12321 (Aurélien) (https://github.com/aurel12321)  
 
 📄 Licence
 
