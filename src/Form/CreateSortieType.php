@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\Sortie;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -15,9 +16,16 @@ class CreateSortieType extends AbstractType
     {
         $builder
             ->add('nom')
-            ->add('startDateTime')
+            ->add('startDateTime', DateTimeType::class, [
+                'widget' => 'single_text',
+                'html5' => true,
+
+            ])
             ->add('duration')
-            ->add('limitDate')
+            ->add('limitDate', DateTimeType::class, [
+                'widget' => 'single_text',
+                'html5' => true,
+            ])
             ->add('nbRegistration')
             ->add('info')
             ->add('submit', SubmitType::class, [

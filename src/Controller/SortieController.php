@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Etat;
 use App\Entity\Sortie;
 use App\Form\CreateSortieType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -13,7 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/sortie', name: 'sortie')]
 final class SortieController extends AbstractController
 {
-    #[Route('/', name: '_')]
+    #[Route('/', name: '_home')]
     public function index(): Response
     {
         return $this->render('sortie/index.html.twig', [
@@ -29,12 +30,13 @@ final class SortieController extends AbstractController
 
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
+            $sortie->setEtat(Etat::CR->value);
             $em->persist($sortie);
             $em->flush();
 
             $this->addFlash('success', 'Sortie crée avec succes');
 
-            return $this->redirectToRoute('sortie');
+            return $this->redirectToRoute('sortie_home');
         }
         return $this->render('sortie/create.html.twig', [
            'sortie_form' => $form,
