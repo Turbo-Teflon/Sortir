@@ -5,7 +5,9 @@
 {% block body %}
 <form method="post">
     {% if error %}
-        <div class="alert alert-danger">Identifiants invalides</div>
+        <div class="alert alert-danger">
+            Identifiants invalides
+        </div>
     {% endif %}
 
     {% if app.user %}
@@ -14,21 +16,21 @@
         </div>
     {% endif %}
 
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+    <h1 class="h3 mb-3 font-weight-normal">Connexion</h1>
     <label for="inputUsername">Email</label>
-    <input type="text" value="{{ last_username }}" name="username" id="inputUsername" class="form-control" autocomplete="username" required autofocus>
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
+    <input type="text" name="_username" id="inputUsername" class="form-control" autocomplete="username" pattern="^[^@]+@campus-eni\.fr$"  title="L'email doit se terminer par @campus-eni.fr" required autofocus>
+    <label for="inputPassword">Mot de passe</label>
+    <input type="password" name="_password" id="inputPassword" class="form-control" autocomplete="current-password" required>
     <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
 
     <div class="checkbox mb-3">
         <label>
-            <input type="checkbox" name="_remember_me"> Remember me
+            <input type="checkbox" name="_remember_me"> Se souvenir de moi
         </label>
     </div>
 
     <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
+        Valider
     </button>
 </form>
 {% endblock %}
