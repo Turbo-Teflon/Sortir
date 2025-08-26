@@ -24,6 +24,9 @@ class User
     private ?string $telephone = null;
 
     #[ORM\Column(length: 255)]
+    private ?string $password = null;
+
+    #[ORM\Column(length: 255)]
     private ?string $mail = null;
 
     #[ORM\Column]
