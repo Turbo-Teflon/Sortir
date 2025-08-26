@@ -8,19 +8,16 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class HomeController extends AbstractController
 {
-<<<<<<< HEAD
+
     #[Route('/', name: 'home')]
-=======
-    #[Route('/', name: 'app_home')]
->>>>>>> dev
     public function index(): Response
     {
         return $this->render('home/index.html.twig', [
             'controller_name' => 'HomeController',
         ]);
     }
-<<<<<<< HEAD
-=======
+
+
 
     #[Route('/status', name: 'app_status')]
     public function status(): Response
@@ -33,5 +30,5 @@ final class HomeController extends AbstractController
         ]);
     }
 
->>>>>>> dev
+
 }
