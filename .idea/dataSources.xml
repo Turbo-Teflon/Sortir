@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="sortir@localhost" uuid="170b45f1-83f9-4856-88d8-946f7699c292">
-      <driver-ref>mysql.9</driver-ref>
+<<<<<<< HEAD
+    <data-source source="LOCAL" name="sortir@localhost" uuid="b2db0277-039c-4c19-ba32-b5457d49d721">
+=======
+    <data-source source="LOCAL" name="sortir@localhost" uuid="30faa7f3-846e-452e-b919-393792001dda">
+>>>>>>> dev
+      <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://localhost:3306/sortir</jdbc-url>
