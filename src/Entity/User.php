@@ -4,8 +4,8 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -57,6 +57,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
+
         return $this;
     }
 
@@ -68,6 +69,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
+
         return $this;
     }
 
@@ -79,6 +81,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTelephone(string $telephone): static
     {
         $this->telephone = $telephone;
+
         return $this;
     }
 
@@ -90,6 +93,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
+
         return $this;
     }
 
@@ -101,6 +105,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAdministrateur(bool $administrateur): static
     {
         $this->administrateur = $administrateur;
+
         return $this;
     }
 
@@ -112,6 +117,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setActif(bool $actif): static
     {
         $this->actif = $actif;
+
         return $this;
     }
 
@@ -135,6 +141,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $roles[] = 'ROLE_ADMIN';
         }
         $roles[] = 'ROLE_USER';
+
         return array_unique($roles);
     }
 
@@ -149,6 +156,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
+
         return $this;
     }
 
