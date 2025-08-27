@@ -1,0 +1,12 @@
+body {
+    background-color: skyblue;
+}
+
+.entete{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    background: linear-gradient(45deg, #ff6ec7, #fddb92, #6ee7ff);
+}

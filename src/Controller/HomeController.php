@@ -8,13 +8,16 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class HomeController extends AbstractController
 {
-    #[Route('/', name: 'app_home')]
+
+    #[Route('/', name: 'home')]
     public function index(): Response
     {
         return $this->render('home/index.html.twig', [
             'controller_name' => 'HomeController',
         ]);
     }
+
+
 
     #[Route('/status', name: 'app_status')]
     public function status(): Response
@@ -26,5 +29,6 @@ final class HomeController extends AbstractController
             'time' => (new \DateTimeImmutable())->format('c'),
         ]);
     }
+
 
 }
