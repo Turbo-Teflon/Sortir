@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Modifier profil</h1>
+
+        {{ form_start(modifyProfil) }}
+        {{ form_widget(modifyProfil) }}
+        <button type="submit" class="btn btn-primary mt-3">Valider</button>
+        {{ form_end(modifyProfil) }}
+    </div>
+{% endblock %}
