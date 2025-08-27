@@ -1,0 +1,102 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail de la sortie – {{ sortie.nom }}{% endblock %}
+
+
+
+{% block body %}
+
+    <div class="container mt-4">
+        <a href="{{ path('sortie_home') }}" class="btn btn-link mb-3">Back to list</a>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4 mb-3">{{ sortie.nom }}</h1>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Statut</dt>
+                    <dd class="col-sm-8">
+
+                        <span class="badge text-bg-secondary">{{ sortie.etat }}</span>
+                    </dd>
+
+                    <dt class="col-sm-4">Start</dt>
+                    <dd class="col-sm-8">
+                        {{ sortie.startDateTime ? sortie.startDateTime|date('d/m/Y H:i') : '—' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Registration deadline</dt>
+                    <dd class="col-sm-8">
+                        {{ sortie.limitDate ? sortie.limitDate|date('d/m/Y H:i') : '—' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Duration</dt>
+                    <dd class="col-sm-8">
+                        {{ sortie.duration ?? '—' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Max capacity</dt>
+                    <dd class="col-sm-8">
+                        {{ sortie.nbRegistration ?? '—' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Participants ({{ sortie.participants|length }})</dt>
+                    <dd class="col-sm-8">
+                        {% if sortie.participants|length > 0 %}
+                            <ul class="mb-0">
+                                {% for p in sortie.participants %}
+                                    <li>{{ p.prenom }} {{ p.nom }} ({{ p.email }})</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="text-muted">Nothing yet</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Infos</dt>
+                    <dd class="col-sm-8">
+                        {{ sortie.info ?: '—' }}
+                    </dd>
+                </dl>
+
+                <hr class="my-4">
+
+                {# Bouton S’INSCRIRE #}
+                {% set inscriptionsOuvertes = sortie.etat == 'Ouverte' %}
+                {% set inscriptionsOuvertes = sortie.etat == ETAT_OU %}
+
+
+                {% set can_register =
+                    is_granted('ROLE_USER')
+                    and inscriptionsOuvertes
+                    and (sortie.limitDate is null or sortie.limitDate > date())
+                    and (sortie.nbRegistration is null or sortie.participants|length < sortie.nbRegistration)
+                    and (not sortie.participants.contains(app.user))
+                %}
+
+                {% if can_register %}
+                    <form method="post" action="{{ path('sortie_inscrire', {id: sortie.id}) }}" class="d-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('inscrire' ~ sortie.id) }}">
+                        <button class="btn btn-primary">Register</button>
+                    </form>
+                {% else %}
+                    {# Affichage des indices du pourquoi on ne peut pas s’inscrire #}
+                    <div class="text-muted small">
+                        {% if not is_granted('ROLE_USER') %}
+                            Log in to register.
+                        {% elseif not inscriptionsOuvertes %}
+                            Registration is not open.
+                        {% elseif sortie.limitDate is not null and sortie.limitDate <= date() %}
+                            The registration deadline has passed.
+                        {% elseif sortie.nbRegistration is not null and sortie.participants|length >= sortie.nbRegistration %}
+                            the outing is full.
+                        {% elseif sortie.participants.contains(app.user) %}
+                            You are already registered.
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {# ----------------------------------------------- #}
+            </div>
+        </div>
+    </div>
+{% endblock %}

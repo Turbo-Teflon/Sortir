@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\SortieRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -14,7 +16,6 @@ class Sortie
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
-
 
     #[ORM\Column(length: 255)]
     private ?string $nom = null;
@@ -38,12 +39,10 @@ class Sortie
     #[Assert\Choice(choices: [Etat::CR, Etat::OU, Etat::AN, Etat::CL, Etat::EC, Etat::PA], message: 'Ce choix n\'est pas valable')]
     private ?string $etat = null;
 
-
     public function getId(): ?int
     {
         return $this->id;
     }
-
 
     public function getNom(): ?string
     {
@@ -126,6 +125,34 @@ class Sortie
     {
         $this->etat = $etat;
     }
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'sortie_participant')]
+    private Collection $participants;
 
+    public function __construct()
+    {
+        $this->participants = new ArrayCollection();
+    }
 
+    /** @return Collection<int, User> */
+    public function getParticipants(): Collection
+    {
+        return $this->participants;
+    }
+
+    public function addParticipant(User $user): static
+    {
+        if (!$this->participants->contains($user)) {
+            $this->participants->add($user);
+        }
+
+        return $this;
+    }
+
+    public function removeParticipant(User $user): static
+    {
+        $this->participants->removeElement($user);
+
+        return $this;
+    }
 }

@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/sortie', name: 'sortie')]
 final class SortieController extends AbstractController
@@ -38,8 +39,71 @@ final class SortieController extends AbstractController
 
             return $this->redirectToRoute('sortie_home');
         }
+
         return $this->render('sortie/create.html.twig', [
-           'sortie_form' => $form,
+            'sortie_form' => $form,
+        ]);
+    }
+
+    #[Route('/{id<\d+>}/inscrire', name: '_inscrire', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function inscrire(
+        Sortie $sortie,
+        Request $request,
+        EntityManagerInterface $em,
+    ): Response {
+        // Token CSRF (Cross Site Request Forgery)
+        if (!$this->isCsrfTokenValid('inscrire'.$sortie->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide');
+        }
+
+        $user = $this->getUser();
+        $now = new \DateTime();
+
+        // 1) Check si les inscriptions sont ouvertes.
+        if ($sortie->getEtat() !== Etat::OU->value) {
+            $this->addFlash('warning', 'Les inscriptions ne sont pas ouvertes pour cette sortie.');
+
+            return $this->redirectToRoute('sortie_home');
+        }
+
+        // 2) Check si la date limite est respectée.
+        if (null !== $sortie->getLimitDate() && $now > $sortie->getLimitDate()) {
+            $this->addFlash('warning', "La date limite d'inscription est dépassée.");
+
+            return $this->redirectToRoute('sortie_home');
+        }
+
+        // 3) Check des places dispo pour la sortie.
+        if (null !== $sortie->getNbRegistration()
+            && $sortie->getParticipants()->count() >= $sortie->getNbRegistration()) {
+            $this->addFlash('warning', 'La sortie est complète.');
+
+            return $this->redirectToRoute('sortie_home');
+        }
+
+        // 4) Check de l'inscription ?
+        if ($sortie->getParticipants()->contains($user)) {
+            $this->addFlash('info', 'Tu es déjà inscrit à cette sortie.');
+
+            return $this->redirectToRoute('sortie_home');
+        }
+
+        // Validation de l'inscription
+        $sortie->addParticipant($user);
+        $em->flush();
+
+        $this->addFlash('success', 'Inscription enregistrée');
+
+        return $this->redirectToRoute('sortie_home');
+    }
+
+    #[Route('/{id<\d+>}', name: '_detail', methods: ['GET'])]
+    public function show(Sortie $sortie): Response
+    {
+        return $this->render('sortie/detail.html.twig', [
+            'sortie' => $sortie,
+            'ETAT_OU' => Etat::OU->value,
         ]);
     }
 }
