@@ -15,6 +15,7 @@
   <component name="PhpCSFixer">
     <phpcsfixer_settings>
       <PhpCSFixerConfiguration tool_path="$PROJECT_DIR$/vendor/bin/php-cs-fixer" />
+      <phpcs_fixer_by_interpreter asDefaultInterpreter="true" interpreter_id="e5d59b6f-4bde-4288-95f9-6ae51349821d" tool_path="D:\TurboDev\Projet Synfony\SortirApp\Sortir\vendor\bin\php-cs-fixer" timeout="30000" />
     </phpcsfixer_settings>
   </component>
   <component name="PhpIncludePathManager">

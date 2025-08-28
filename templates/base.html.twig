@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -11,19 +11,18 @@
 
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 
-
 </head>
 <body>
 <div class="entete position-relative d-flex align-items-center mb-4" style="height: 120px;">
     <img src="{{ asset('images/sortir.svg') }}" alt="Sortir" style="width:150px; height:150px;">
     <h1 class="ms-3" style="color: #006400;">SORTIES AVEC L'ENI</h1>
 
-    <nav style="position: absolute; right: 0; bottom: 0; margin-right: 100px;">
-        <a href="{{ path('home') }}" class="me-3">Accueil</a>
-        <a href="#" class="me-3">Sorties</a>
-        <a href="#">Login</a>
-    </nav>
 </div>
+<nav>
+    <a href="{{ path('home') }}">Accueil</a>
+    <a href="{{ path('sortie_home') }}">Sorties</a>
+    <a href="{{ path('app_login') }}">Login</a>
+</nav>
 
 
 <div class="container">
