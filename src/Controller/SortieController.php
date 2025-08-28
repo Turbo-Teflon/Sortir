@@ -106,4 +106,51 @@ final class SortieController extends AbstractController
             'ETAT_OU' => Etat::OU->value,
         ]);
     }
+    #[Route('/{id<\d+>}/desister', name: '_desister', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function desister(
+        Sortie $sortie,
+        Request $request,
+        EntityManagerInterface $em
+    ): Response {
+        // CSRF
+        if (!$this->isCsrfTokenValid('desister'.$sortie->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide');
+        }
+        $user = $this->getUser();
+        $now  = new \DateTimeImmutable();
+
+        // 1) La sortie ne doit pas avoir commencé.
+        if ($sortie->getStartDateTime() !== null && $sortie->getStartDateTime() <= $now) {
+            $this->addFlash('warning', 'La sortie a déjà débuté, désistement impossible.');
+            return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+        }
+
+        // 2) Il faut être inscrit.
+        if (!$sortie->getParticipants()->contains($user)) {
+            $this->addFlash('info', 'Tu n’es pas inscrit à cette sortie.');
+            return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+        }
+
+        // 3) Se désinscrire.
+        $sortie->removeParticipant($user);
+
+        /* 4) Si la sortie était pleine et donc "Clôturée",
+            on la remet "Ouverte" seulement si la date limite d’inscription n’est pas dépassée,
+           et s’il reste de la place.
+        */
+        $limitOk = $sortie->getLimitDate() === null || $sortie->getLimitDate() >= $now;
+        $hasCapacity = $sortie->getNbRegistration() === null
+            || $sortie->getParticipants()->count() < $sortie->getNbRegistration();
+
+        if ($sortie->getEtat() === Etat::CL->value && $limitOk && $hasCapacity) {
+            $sortie->setEtat(Etat::OU->value);
+        }
+
+        $em->flush();
+
+        $this->addFlash('success', 'You have withdrawn. The spot will become available again if registration is still open.');
+        return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+    }
+
 }
