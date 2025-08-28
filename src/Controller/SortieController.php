@@ -5,8 +5,10 @@ namespace App\Controller;
 use App\Entity\Etat;
 use App\Entity\Sortie;
 use App\Form\CreateSortieType;
+use App\Repository\SortieRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -40,6 +42,36 @@ final class SortieController extends AbstractController
         }
         return $this->render('sortie/create.html.twig', [
            'sortie_form' => $form,
+        ]);
+    }
+
+
+
+
+    #[Route('/list/{page}', name: 'sortie_list', requirements: ['page' => '\d+'], defaults: ['page' => 1], methods: ['GET'])]
+    public function list(SortieRepository $sortieRepository, int $page, ParameterBagInterface $parameters): Response
+    {
+        $nbPerPage = $parameters->get('sortie')['nb_max'];
+
+
+        $offset = ($page - 1) * $nbPerPage;
+
+
+        $sorties = $sortieRepository->findBy(
+            [],
+            ['startDateTime' => 'ASC'],
+            $nbPerPage,
+            $offset
+        );
+
+
+        $total = $sortieRepository->count([]);
+        $totalPages = ceil($total / $nbPerPage);
+
+        return $this->render('Sortie/list.html.twig', [
+            'sorties' => $sorties,
+            'page' => $page,
+            'total_pages' => $totalPages,
         ]);
     }
 }
