@@ -140,7 +140,7 @@ class Sortie
         return $this->users;
     }
 
-    public function addParticipant(User $user): static
+    public function addUser(User $user): static
     {
         if (!$this->users->contains($user)) {
             $this->users->add($user);
@@ -156,7 +156,7 @@ class Sortie
         return $this;
     }
 
-    // Helpers (Méthode utilitaire qui permet d'encapsuler une règle métier pour la rendre réutilisable).
+    // Helpers sortie vers site (Méthode utilitaire qui permet d'encapsuler une règle métier pour la rendre réutilisable).
     public function hasStarted(): bool
     {
 
@@ -188,7 +188,12 @@ class Sortie
             $this->setEtat(Etat::OU);
         }
     }
+    #[ORM\ManyToOne(targetEntity: Site::class, inversedBy: 'sorties')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Site $site = null;
 
+    public function getSite(): ?Site { return $this->site; }
+    public function setSite(?Site $site): self { $this->site = $site; return $this; }
 
 
 }
