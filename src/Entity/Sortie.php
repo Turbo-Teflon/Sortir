@@ -126,32 +126,32 @@ class Sortie
         $this->etat = $etat;
     }
     #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'sortie_participant')]
-    private Collection $participants;
+    #[ORM\JoinTable(name: 'outing_user')]
+    private Collection $users;
 
     public function __construct()
     {
-        $this->participants = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 
     /** @return Collection<int, User> */
-    public function getParticipants(): Collection
+    public function getUsers(): Collection
     {
-        return $this->participants;
+        return $this->users;
     }
 
     public function addParticipant(User $user): static
     {
-        if (!$this->participants->contains($user)) {
-            $this->participants->add($user);
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
         }
 
         return $this;
     }
 
-    public function removeParticipant(User $user): static
+    public function removeUser(User $user): static
     {
-        $this->participants->removeElement($user);
+        $this->users->removeElement($user);
 
         return $this;
     }
@@ -169,7 +169,7 @@ class Sortie
 
         // nbRegistration = capacité max (si null, on considère pas de limite)
         $hasCapacity = $this->getNbRegistration() === null
-            || $this->getParticipants()->count() < $this->getNbRegistration();
+            || $this->getusers()->count() < $this->getNbRegistration();
 
         // Ouverture  seulement limite pas dépassé et s'il reste de la place.
 

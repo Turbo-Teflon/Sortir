@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+{% block title %}Sorties par site{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1 class="h4 mb-3">Sorties par site</h1>
+
+        <form method="get" class="card card-body mb-3">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">Site</label>
+                    <select name="site" class="form-select">
+                        <option value="">— Outings by sites —</option>
+                        {% for s in sites %}
+                            <option value="{{ s.id }}" {{ current_site and current_site.id == s.id ? 'selected' : '' }}>
+                                {{ s.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-8 d-flex align-items-end gap-3 flex-wrap">
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" name="onlyMine" value="1" {{ filters.onlyMine ? 'checked' }}> I am the organizer
+                    </label>
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" name="iAmRegistered" value="1" {{ filters.iAmRegistered ? 'checked' }}> I am registered
+                    </label>
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" name="iAmNotRegistered" value="1" {{ filters.iAmNotRegistered ? 'checked' }}> I am not registered
+                    </label>
+                    <button class="btn btn-primary ms-auto">Filter</button>
+                    <a class="btn btn-outline-secondary" href="{{ path('sortie_by_site') }}">Reset</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="list-group">
+            {% for s in sorties %}
+                <a class="list-group-item list-group-item-action" href="{{ path('sortie_detail', {id: s.id}) }}">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ s.nom }}</strong>
+                            <span class="badge text-bg-secondary ms-2">{{ s.etat }}</span>
+                            <div class="small text-muted">
+                                {{ s.site ? s.site.nom : '—' }} •
+                                {{ s.startDateTime ? s.startDateTime|date('d/m/Y H:i') : '—' }} •
+                                Orga : {{ s.organisateur ? (s.organisateur.pseudo ?? s.organisateur.email ?? '—') : '—' }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            {% else %}
+                <div class="alert alert-info">No outing yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
