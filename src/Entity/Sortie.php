@@ -36,12 +36,9 @@ class Sortie
     private ?string $info = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\Choice(choices: [Etat::CR, Etat::OU, Etat::AN, Etat::CL, Etat::EC, Etat::PA], message: 'Ce choix n\'est pas valable')]
+    #[Assert\Choice(choices: [Etat::CR, Etat::OU, Etat::AN, Etat::CL, Etat::EC, Etat::PA], message: 'This choice is not available')]
     private ?string $etat = null;
 
-    #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'sortie_participant')]
-    private Collection $participants;
 
     #[ORM\ManyToOne(inversedBy: 'promotedSorties')]
     #[ORM\JoinColumn(nullable: false)]
@@ -51,6 +48,19 @@ class Sortie
     #[ORM\JoinColumn(nullable: false)]
     private ?Place $place = null;
 
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'outing_user')]
+    private Collection $users;
+
+    #[ORM\ManyToOne(targetEntity: Site::class, inversedBy: 'sorties')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Site $site = null;
+
+    public function __construct()
+    {
+        $this->users = new ArrayCollection();
+        $this->place = new Place();
+    }
 
     public function getId(): ?int
     {
@@ -138,15 +148,9 @@ class Sortie
     {
         $this->etat = $etat;
     }
-    #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'outing_user')]
-    private Collection $users;
 
-    public function __construct()
-    {
-        $this->users = new ArrayCollection();
-        $this->place = new Place();
-    }
+
+
 
     /** @return Collection<int, User> */
     public function getUsers(): Collection
@@ -197,7 +201,6 @@ class Sortie
     // Helpers sortie vers site (Méthode utilitaire qui permet d'encapsuler une règle métier pour la rendre réutilisable).
     public function hasStarted(): bool
     {
-
         return $this->getStartDateTime() <= new \DateTimeImmutable();
     }
 
@@ -206,12 +209,12 @@ class Sortie
         $now = new \DateTimeImmutable();
 
         // nbRegistration = capacité max (si null, on considère pas de limite)
-        $hasCapacity = $this->getNbRegistration() === null
+        $hasCapacity = null === $this->getNbRegistration()
             || $this->getusers()->count() < $this->getNbRegistration();
 
         // Ouverture  seulement limite pas dépassé et s'il reste de la place.
 
-        $limitOk = $this->getLimitDate() === null || $this->getLimitDate() >= $now;
+        $limitOk = null === $this->getLimitDate() || $this->getLimitDate() >= $now;
 
         // tient compte de l’état : OU = Ouverte, CR = Créée CL = cloturé
         $etatOk = in_array($this->getEtat(), [Etat::OU, Etat::CR, Etat::CL], true);
@@ -222,16 +225,21 @@ class Sortie
     public function reopenIfPossibleAfterWithdrawal(): void
     {
         // Si la sortie était "Clôturée" car pleine, on peut la rouvrir.
-        if ($this->getEtat() === Etat::CL && $this->isRegistrationOpen()) {
-            $this->setEtat(Etat::OU);
+        if (Etat::CL->value === $this->getEtat() && $this->isRegistrationOpen()) {
+            $this->setEtat(Etat::OU->value);
         }
     }
-    #[ORM\ManyToOne(targetEntity: Site::class, inversedBy: 'sorties')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Site $site = null;
-
-    public function getSite(): ?Site { return $this->site; }
-    public function setSite(?Site $site): self { $this->site = $site; return $this; }
 
 
+    public function getSite(): ?Site
+    {
+        return $this->site;
+    }
+
+    public function setSite(?Site $site): self
+    {
+        $this->site = $site;
+
+        return $this;
+    }
 }
