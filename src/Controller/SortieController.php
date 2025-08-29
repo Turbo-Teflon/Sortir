@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Etat;
 use App\Entity\Sortie;
+use App\Entity\User;
 use App\Form\CreateSortieType;
 use App\Repository\SortieRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,6 +27,7 @@ final class SortieController extends AbstractController
     }
 
     #[Route('/create', name: '_create')]
+    #[IsGranted('ROLE_USER')]
     public function create(Request $request, EntityManagerInterface $em): Response
     {
         $sortie = new Sortie();
@@ -47,7 +49,7 @@ final class SortieController extends AbstractController
         ]);
     }
 
-    #[Route('/{id<\d+>}/inscrire', name: '_inscrire', methods: ['POST'])]
+    #[Route('/{id<\d+>}/inscrire', name: '_inscrire' , methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function inscrire(
         Sortie $sortie,
@@ -95,9 +97,13 @@ final class SortieController extends AbstractController
         $sortie->addParticipant($user);
         $em->flush();
 
-        $this->addFlash('success', 'Inscription enregistrée');
+        $this->addFlash(
+            'success',
+            'Inscription à l\'activité "' . $sortie->getNom() . '" enregistrée.'
+        );
 
-        return $this->redirectToRoute('sortie_home');
+
+        return $this->redirectToRoute('sortie_list');
     }
 
     #[Route('/{id<\d+>}', name: '_detail', methods: ['GET'])]
@@ -112,7 +118,7 @@ final class SortieController extends AbstractController
 
 
 
-    #[Route('/list/{page}', name: 'sortie_list', requirements: ['page' => '\d+'], defaults: ['page' => 1], methods: ['GET'])]
+    #[Route('/list/{page}', name: '_list', requirements: ['page' => '\d+'], defaults: ['page' => 1], methods: ['GET'])]
     public function list(SortieRepository $sortieRepository, int $page, ParameterBagInterface $parameters): Response
     {
         $nbPerPage = $parameters->get('sortie')['nb_max'];
@@ -138,4 +144,13 @@ final class SortieController extends AbstractController
             'total_pages' => $totalPages,
         ]);
     }
+
+    #[Route('/user/{id}', name: '_user_profil', methods: ['GET'])]
+    public function userProfil(User $user): Response
+    {
+        return $this->render('sortie/userProfil.html.twig', [
+            'user' => $user,
+        ]);
+    }
+
 }

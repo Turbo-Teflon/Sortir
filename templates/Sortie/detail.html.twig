@@ -7,7 +7,7 @@
 {% block body %}
 
     <div class="container mt-4">
-        <a href="{{ path('sortie_home') }}" class="btn btn-link mb-3">Back to list</a>
+        <a href="{{ path('sortie_list') }}" class="btn btn-link mb-3">Back to list</a>
 
         <div class="card shadow-sm">
             <div class="card-body">
@@ -45,7 +45,11 @@
                         {% if sortie.participants|length > 0 %}
                             <ul class="mb-0">
                                 {% for p in sortie.participants %}
-                                    <li>{{ p.prenom }} {{ p.nom }} ({{ p.email }})</li>
+                                    <li>
+                                        <a href="{{ path('sortie_user_profil', {id: p.id}) }}">
+                                            {{ p.prenom }} {{ p.nom }} ({{ p.email }})
+                                        </a>
+                                    </li>
                                 {% endfor %}
                             </ul>
                         {% else %}
@@ -64,6 +68,7 @@
                 {# Bouton S’INSCRIRE #}
                 {% set inscriptionsOuvertes = sortie.etat == 'Ouverte' %}
                 {% set inscriptionsOuvertes = sortie.etat == ETAT_OU %}
+
 
 
                 {% set can_register =
