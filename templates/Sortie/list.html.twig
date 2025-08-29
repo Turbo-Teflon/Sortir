@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ parent() }} - Sorties{% endblock %}
+
+{% block body %}
+    <h2>Les sorties à venir</h2>
+
+    <section>
+        {% if page > 1 %}
+            <a href="{{ path('sortie_list', {'page' : page - 1}) }}">Page précédente</a>&nbsp;
+        {% endif %}
+        {% if page < total_pages %}
+            <a href="{{ path('sortie_list', {'page' : page + 1}) }}">Page suivante</a>
+        {% endif %}
+    </section>
+
+    <section class="sorties-list">
+        {% for sortie in sorties %}
+            <div class="card w-50 mb-3 p-3 mx-auto">
+
+                <h3 class="text-center mb-3" style="font-family: 'Comic Sans MS', sans-serif; color: #A0522D">
+                    <a href="{{ path('sortie_detail', {id: sortie.id}) }}" style= "padding: 50px; text-decoration:none; color:#A0522D;">
+                        {{ sortie.nom }}
+                    </a>
+                </h3>
+
+                <div class="d-flex justify-content-between text-center mb-2" style="font-family: 'Comic Sans MS', cursive;">
+                    <div>
+                        <i class="bi bi-clock me-1 fs-4 icon-bold"></i>
+                        {{ sortie.startDateTime|date('d/m/Y H:i') }}
+                    </div>
+                    <div>
+                        <i class="bi bi-geo-alt me-1 fs-4 icon-bold"></i>
+                        Paris
+                    </div>
+                    <div>
+                        <i class="bi bi-people me-1 fs-4 icon-bold"></i>
+                        {{ sortie.users|length }}/{{ sortie.nbRegistration}}
+
+                    </div>
+                </div>
+
+            </div>
+        {% endfor %}
+
+    </section>
+{% endblock %}
