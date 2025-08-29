@@ -6,6 +6,10 @@ use App\Entity\Etat;
 use App\Entity\Sortie;
 use App\Entity\User;
 use App\Form\CreateSortieType;
+
+
+use App\Repository\SiteRepository;
+
 use App\Repository\SortieRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -39,7 +43,7 @@ final class SortieController extends AbstractController
             $em->persist($sortie);
             $em->flush();
 
-            $this->addFlash('success', 'Sortie crée avec succes');
+            $this->addFlash('success', 'Outing is successfully created.');
 
             return $this->redirectToRoute('sortie_home');
         }
@@ -51,13 +55,13 @@ final class SortieController extends AbstractController
 
     #[Route('/{id<\d+>}/inscrire', name: '_inscrire' , methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function inscrire(
+    public function subscribe(
         Sortie $sortie,
         Request $request,
         EntityManagerInterface $em,
     ): Response {
         // Token CSRF (Cross Site Request Forgery)
-        if (!$this->isCsrfTokenValid('inscrire'.$sortie->getId(), (string) $request->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('subscribe'.$sortie->getId(), (string) $request->request->get('_token'))) {
             throw $this->createAccessDeniedException('Token CSRF invalide');
         }
 
@@ -66,41 +70,44 @@ final class SortieController extends AbstractController
 
         // 1) Check si les inscriptions sont ouvertes.
         if ($sortie->getEtat() !== Etat::OU->value) {
-            $this->addFlash('warning', 'Les inscriptions ne sont pas ouvertes pour cette sortie.');
+            $this->addFlash('warning', 'Registration is not open for this outing.');
 
             return $this->redirectToRoute('sortie_home');
         }
 
         // 2) Check si la date limite est respectée.
         if (null !== $sortie->getLimitDate() && $now > $sortie->getLimitDate()) {
-            $this->addFlash('warning', "La date limite d'inscription est dépassée.");
+            $this->addFlash('warning', "The registration deadline has passed.");
 
             return $this->redirectToRoute('sortie_home');
         }
 
         // 3) Check des places dispo pour la sortie.
         if (null !== $sortie->getNbRegistration()
-            && $sortie->getParticipants()->count() >= $sortie->getNbRegistration()) {
-            $this->addFlash('warning', 'La sortie est complète.');
+            && $sortie->getUsers()->count() >= $sortie->getNbRegistration()) {
+            $this->addFlash('warning', 'Outing is full.');
 
             return $this->redirectToRoute('sortie_home');
         }
 
         // 4) Check de l'inscription ?
-        if ($sortie->getParticipants()->contains($user)) {
-            $this->addFlash('info', 'Tu es déjà inscrit à cette sortie.');
+        if ($sortie->getUsers()->contains($user)) {
+            $this->addFlash('info', 'You are already registered to this outing.');
 
             return $this->redirectToRoute('sortie_home');
         }
 
         // Validation de l'inscription
-        $sortie->addParticipant($user);
+        $sortie->addUser($user);
         $em->flush();
+
 
         $this->addFlash(
             'success',
             'Inscription à l\'activité "' . $sortie->getNom() . '" enregistrée.'
         );
+
+
 
 
         return $this->redirectToRoute('sortie_list');
@@ -114,6 +121,7 @@ final class SortieController extends AbstractController
             'ETAT_OU' => Etat::OU->value,
         ]);
     }
+
 
 
 
@@ -152,5 +160,92 @@ final class SortieController extends AbstractController
             'user' => $user,
         ]);
     }
+
+    #[Route('/{id<\d+>}/desister', name: '_desister', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function desister(
+        Sortie $sortie,
+        Request $request,
+        EntityManagerInterface $em
+    ): Response {
+        // CSRF
+        if (!$this->isCsrfTokenValid('desister'.$sortie->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide');
+        }
+        $user = $this->getUser();
+        $now  = new \DateTimeImmutable();
+
+        // 1) La sortie ne doit pas avoir commencé.
+        if ($sortie->getStartDateTime() !== null && $sortie->getStartDateTime() <= $now) {
+            $this->addFlash('warning', 'La sortie a déjà débuté, désistement impossible.');
+            return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+        }
+
+        // 2) Il faut être inscrit.
+        if (!$sortie->getUsers()->contains($user)) {
+            $this->addFlash('info', 'You don\'t subscribe to this outing.');
+            return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+        }
+
+        // 3) Se désinscrire.
+        $sortie->removeUser($user);
+
+        /* 4) Si la sortie était pleine et donc "Clôturée",
+            on la remet "Ouverte" seulement si la date limite d’inscription n’est pas dépassée,
+           et s’il reste de la place.
+        */
+        $limitOk = $sortie->getLimitDate() === null || $sortie->getLimitDate() >= $now;
+        $hasCapacity = $sortie->getNbRegistration() === null
+            || $sortie->getUsers()->count() < $sortie->getNbRegistration();
+
+        if ($sortie->getEtat() === Etat::CL->value && $limitOk && $hasCapacity) {
+            $sortie->setEtat(Etat::OU->value);
+        }
+
+        $em->flush();
+
+        $this->addFlash('success', 'You have withdrawn. The spot will become available again if registration is still open.');
+        return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+    }
+
+    #[Route('/list', name: '_by_site', methods: ['GET'])]
+    public function bySite(
+        Request $req,
+        SortieRepository $sortieRepo,
+        SiteRepository $siteRepo
+    ): Response {
+        $this->denyAccessUnlessGranted('ROLE_USER');
+
+        // Paramètres GET
+        $siteId          = $req->query->getInt('site', 0);
+        $onlyMine        = (bool)$req->query->get('onlyMine', false);
+        $iAmRegistered   = (bool)$req->query->get('iAmRegistered', false);
+        $iAmNotRegistered= (bool)$req->query->get('iAmNotRegistered', false);
+
+        $site    = $siteId ? $siteRepo->find($siteId) : null;
+        $me      = $this->getUser();
+
+        // Limite aux 4 sites (Nantes, Niort, Rennes, Quimper)
+        $sites = $siteRepo->createQueryBuilder('s')
+            ->andWhere('s.nom IN (:allowed)')
+            ->setParameter('allowed', ['Nantes','Niort','Rennes','Quimper'])
+            ->orderBy('s.nom', 'ASC')
+            ->getQuery()->getResult();
+
+        $sorties = $sortieRepo->findForSiteListing($site, $me, $onlyMine, $iAmRegistered, $iAmNotRegistered);
+
+        return $this->render('sortie/by_site.html.twig', [
+            'sites' => $sites,
+            'current_site' => $site,
+            'sorties' => $sorties,
+            'filters' => [
+                'onlyMine' => $onlyMine,
+                'iAmRegistered' => $iAmRegistered,
+                'iAmNotRegistered' => $iAmNotRegistered,
+            ],
+        ]);
+    }
+
+
 
 }

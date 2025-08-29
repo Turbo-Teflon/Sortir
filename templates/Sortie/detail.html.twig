@@ -65,11 +65,16 @@
 
                 <hr class="my-4">
 
-                {# Bouton S’INSCRIRE #}
-                {% set inscriptionsOuvertes = sortie.etat == 'Ouverte' %}
+                {# --------- INSCRIPTION / DESISTEMENT --------- #}
+
+                {# 1) Ouverture des inscriptions (utilise la constante passée par le contrôleur) #}
                 {% set inscriptionsOuvertes = sortie.etat == ETAT_OU %}
 
 
+
+
+
+                {# 2) Bouton S’INSCRIRE #}
 
                 {% set can_register =
                     is_granted('ROLE_USER')
@@ -85,7 +90,6 @@
                         <button class="btn btn-primary">Register</button>
                     </form>
                 {% else %}
-                    {# Affichage des indices du pourquoi on ne peut pas s’inscrire #}
                     <div class="text-muted small">
                         {% if not is_granted('ROLE_USER') %}
                             Log in to register.
@@ -94,13 +98,35 @@
                         {% elseif sortie.limitDate is not null and sortie.limitDate <= date() %}
                             The registration deadline has passed.
                         {% elseif sortie.nbRegistration is not null and sortie.participants|length >= sortie.nbRegistration %}
-                            the outing is full.
+                            The outing is full.
                         {% elseif sortie.participants.contains(app.user) %}
                             You are already registered.
                         {% endif %}
                     </div>
                 {% endif %}
-                {# ----------------------------------------------- #}
+
+                {# 3) Bouton SE DÉSISTER (visible si inscrit et si la sortie n'a pas commencé) #}
+                {% set can_withdraw =
+                    is_granted('ROLE_USER')
+                    and sortie.participants.contains(app.user)
+                    and (sortie.startDateTime is not null and sortie.startDateTime > date())
+                %}
+
+                {% if can_withdraw %}
+                    <form method="post" action="{{ path('sortie_desister', {id: sortie.id}) }}" class="d-inline ms-2">
+                        <input type="hidden" name="_token" value="{{ csrf_token('desister' ~ sortie.id) }}">
+                        <button class="btn btn-warning" onclick="return confirm('Confirmer le désistement ?')">
+                            Se désister
+                        </button>
+                    </form>
+                {% else %}
+                    {# Indices d'impossibilité de désistement #}
+                    {% if is_granted('ROLE_USER') and sortie.participants.contains(app.user) and sortie.startDateTime is not null and sortie.startDateTime <= date() %}
+                        <div class="text-muted small mt-2">The event has already started. Withdrawal is no longer possible.</div>
+                    {% endif %}
+                {% endif %}
+                {# --------------------------------------------- #}
+
             </div>
         </div>
     </div>

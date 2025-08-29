@@ -126,33 +126,69 @@ class Sortie
         $this->etat = $etat;
     }
     #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'sortie_participant')]
-    private Collection $participants;
+    #[ORM\JoinTable(name: 'outing_user')]
+    private Collection $users;
 
     public function __construct()
     {
-        $this->participants = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 
     /** @return Collection<int, User> */
-    public function getParticipants(): Collection
+    public function getUsers(): Collection
     {
-        return $this->participants;
+        return $this->users;
     }
 
     public function addParticipant(User $user): static
     {
-        if (!$this->participants->contains($user)) {
-            $this->participants->add($user);
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
         }
 
         return $this;
     }
 
-    public function removeParticipant(User $user): static
+    public function removeUser(User $user): static
     {
-        $this->participants->removeElement($user);
+        $this->users->removeElement($user);
 
         return $this;
     }
+
+    // Helpers (Méthode utilitaire qui permet d'encapsuler une règle métier pour la rendre réutilisable).
+    public function hasStarted(): bool
+    {
+
+        return $this->getStartDateTime() <= new \DateTimeImmutable();
+    }
+
+    public function isRegistrationOpen(): bool
+    {
+        $now = new \DateTimeImmutable();
+
+        // nbRegistration = capacité max (si null, on considère pas de limite)
+        $hasCapacity = $this->getNbRegistration() === null
+            || $this->getusers()->count() < $this->getNbRegistration();
+
+        // Ouverture  seulement limite pas dépassé et s'il reste de la place.
+
+        $limitOk = $this->getLimitDate() === null || $this->getLimitDate() >= $now;
+
+        // tient compte de l’état : OU = Ouverte, CR = Créée CL = cloturé
+        $etatOk = in_array($this->getEtat(), [Etat::OU, Etat::CR, Etat::CL], true);
+
+        return $limitOk && $hasCapacity && $etatOk;
+    }
+
+    public function reopenIfPossibleAfterWithdrawal(): void
+    {
+        // Si la sortie était "Clôturée" car pleine, on peut la rouvrir.
+        if ($this->getEtat() === Etat::CL && $this->isRegistrationOpen()) {
+            $this->setEtat(Etat::OU);
+        }
+    }
+
+
+
 }
