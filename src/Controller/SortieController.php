@@ -31,29 +31,43 @@ final class SortieController extends AbstractController
     }
 
     #[Route('/create', name: '_create')]
-    #[IsGranted('ROLE_USER')]
-    public function create(Request $request, EntityManagerInterface $em): Response
-    {
-        $sortie = new Sortie();
-        $form = $this->createForm(CreateSortieType::class, $sortie);
+#[IsGranted('ROLE_USER')]
+    public function create(
+        Request $request,
+        EntityManagerInterface $em,
+        SiteRepository $siteRepo
+    ): Response {
 
+        $sortie = new Sortie();
+
+        // site par défaut "Ligne"
+        if (null === $sortie->getSite()) {
+            $defaultSite = $siteRepo->findOneBy(['nom' => 'Ligne']);
+            if ($defaultSite) {
+                $sortie->setSite($defaultSite);
+            }
+        }
+
+        // un seul type de formulaire !
+        $form = $this->createForm(CreateSortieType::class, $sortie);
         $form->handleRequest($request);
+
         if ($form->isSubmitted() && $form->isValid()) {
             $sortie->setEtat(Etat::CR->value);
             $em->persist($sortie);
             $em->flush();
 
             $this->addFlash('success', 'Outing is successfully created.');
-
             return $this->redirectToRoute('sortie_home');
         }
 
         return $this->render('sortie/create.html.twig', [
-            'sortie_form' => $form,
+            'sortie_form' => $form->createView(), // <- important
         ]);
     }
 
-    #[Route('/{id<\d+>}/inscrire', name: '_inscrire' , methods: ['POST'])]
+
+    #[Route('/{id<\d+>}/inscrire', name: '_inscrire', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function subscribe(
         Sortie $sortie,
@@ -102,6 +116,7 @@ final class SortieController extends AbstractController
         $em->flush();
 
 
+
         $this->addFlash(
             'success',
             'Inscription à l\'activité "' . $sortie->getNom() . '" enregistrée.'
@@ -111,6 +126,7 @@ final class SortieController extends AbstractController
 
 
         return $this->redirectToRoute('sortie_list');
+
     }
 
     #[Route('/{id<\d+>}', name: '_detail', methods: ['GET'])]
