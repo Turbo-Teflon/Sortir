@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -43,6 +45,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     private ?bool $actif = null;
+
+    /**
+     * @var Collection<int, Sortie>
+     */
+    #[ORM\OneToMany(targetEntity: Sortie::class, mappedBy: 'promoter')]
+    private Collection $promotedSorties;
+
+    public function __construct()
+    {
+        $this->promotedSorties = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -164,5 +177,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // @deprecated, à utiliser si tu stockes temporairement des données sensibles
+    }
+
+    /**
+     * @return Collection<int, Sortie>
+     */
+    public function getPromotedSorties(): Collection
+    {
+        return $this->promotedSorties;
+    }
+
+    public function addPromotedSorty(Sortie $promotedSorty): static
+    {
+        if (!$this->promotedSorties->contains($promotedSorty)) {
+            $this->promotedSorties->add($promotedSorty);
+            $promotedSorty->setPromoter($this);
+        }
+
+        return $this;
+    }
+
+    public function removePromotedSorty(Sortie $promotedSorty): static
+    {
+        if ($this->promotedSorties->removeElement($promotedSorty)) {
+            // set the owning side to null (unless already changed)
+            if ($promotedSorty->getPromoter() === $this) {
+                $promotedSorty->setPromoter(null);
+            }
+        }
+
+        return $this;
     }
 }

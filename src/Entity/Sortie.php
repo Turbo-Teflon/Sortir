@@ -39,6 +39,19 @@ class Sortie
     #[Assert\Choice(choices: [Etat::CR, Etat::OU, Etat::AN, Etat::CL, Etat::EC, Etat::PA], message: 'Ce choix n\'est pas valable')]
     private ?string $etat = null;
 
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'sortie_participant')]
+    private Collection $participants;
+
+    #[ORM\ManyToOne(inversedBy: 'promotedSorties')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $promoter = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Place $place = null;
+
+
     public function getId(): ?int
     {
         return $this->id;
@@ -125,13 +138,11 @@ class Sortie
     {
         $this->etat = $etat;
     }
-    #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'sortie_participant')]
-    private Collection $participants;
 
     public function __construct()
     {
         $this->participants = new ArrayCollection();
+        $this->place = new Place();
     }
 
     /** @return Collection<int, User> */
@@ -152,6 +163,30 @@ class Sortie
     public function removeParticipant(User $user): static
     {
         $this->participants->removeElement($user);
+
+        return $this;
+    }
+
+    public function getPromoter(): ?User
+    {
+        return $this->promoter;
+    }
+
+    public function setPromoter(?User $promoter): static
+    {
+        $this->promoter = $promoter;
+
+        return $this;
+    }
+
+    public function getPlace(): ?Place
+    {
+        return $this->place;
+    }
+
+    public function setPlace(?Place $place): static
+    {
+        $this->place = $place;
 
         return $this;
     }

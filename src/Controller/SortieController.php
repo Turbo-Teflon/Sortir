@@ -28,10 +28,14 @@ final class SortieController extends AbstractController
     {
         $sortie = new Sortie();
         $form = $this->createForm(CreateSortieType::class, $sortie);
+        $user = $this->getUser();
 
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $sortie->setEtat(Etat::CR->value);
+            $sortie->setPromoter($user);
+            $em->persist($sortie->getPlace()->getCity());
+            $em->persist($sortie->getPlace());
             $em->persist($sortie);
             $em->flush();
 

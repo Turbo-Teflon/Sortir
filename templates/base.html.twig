@@ -11,19 +11,25 @@
 
 </head>
 <body>
-<div class="entete d-flex align-items-center mb-4">
-    <img src="{{ asset('images/sortir.svg') }}" alt="Sortir" style="width:150px; height:150px;">
-    <h1 class="ms-3">SORTIES AVEC L'ENI</h1>
-</div>
-<nav>
-    <a href="{{ path('home') }}">Accueil</a>
-    <a href="{{ path('sortie_home') }}">Sorties</a>
-    <a href="{{ path('app_login') }}">Login</a>
-</nav>
+    <div class="entete d-flex align-items-center mb-4">
+        <img src="{{ asset('images/sortir.svg') }}" alt="Sortir" style="width:150px; height:150px;">
+        <h1 class="ms-3">SORTIES AVEC L'ENI</h1>
+    </div>
+    <header>
+        <nav>
+            {% block nav %}
+            <a href="{{ path('home') }}">Accueil</a>
+            <a href="{{ path('sortie_home') }}">Sorties</a>
+            <a href="{{ path('app_login') }}">Login</a>
+            <a href="{{ path('sortie_create') }}">Organiser une Sortie</a>
+            {% endblock %}
+        </nav>
+    </header>
 
-<div class="container">
-    {% block body %}{% endblock %}
-</div>
+    <div class="container">
+        {% block body %}
+        {% endblock %}
+    </div>
 
 
 </body>

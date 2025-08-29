@@ -14,24 +14,24 @@ class City
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
-    private ?string $City = null;
+    private ?string $name = null;
 
-    #[ORM\Column(length: 150)]
-    private ?string $Place = null;
+    #[ORM\Column(length: 5)]
+    private ?string $postCode = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getCity(): ?string
+    public function getName(): ?string
     {
-        return $this->City;
+        return $this->name;
     }
 
-    public function setCity(string $City): static
+    public function setName(string $name): static
     {
-        $this->City = $City;
+        $this->name = $name;
 
         return $this;
     }
@@ -44,6 +44,18 @@ class City
     public function setPlace(string $Place): static
     {
         $this->Place = $Place;
+
+        return $this;
+    }
+
+    public function getPostCode(): ?string
+    {
+        return $this->postCode;
+    }
+
+    public function setPostCode(string $postCode): static
+    {
+        $this->postCode = $postCode;
 
         return $this;
     }
