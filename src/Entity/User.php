@@ -2,7 +2,10 @@
 
 namespace App\Entity;
 
+use App\Entity\Sortie;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -30,11 +33,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255, unique: true)]
-    #[Assert\NotBlank(message: "L'email est obligatoire.")]
-    #[Assert\Email(message: "L'adresse email n'est pas valide.")]
+    #[Assert\NotBlank(message: "Email is required.")]
+    #[Assert\Email(message: "The email address is not valid.")]
     #[Assert\Regex(
         pattern: "/@campus-eni\.fr$/",
-        message: "L'email doit se terminer par @campus-eni.fr"
+        message: "The email must end with @campus-eni.fr"
     )]
     private ?string $email = null;
 
@@ -43,6 +46,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     private ?bool $actif = null;
+
+    /**
+     * Un utilisateur peut organiser plusieurs sorties.
+     */
+    #[ORM\OneToMany(mappedBy: 'organisateur', targetEntity: Sortie::class)]
+    private Collection $sortiesOrganisees;
+
+    public function __construct()
+    {
+        $this->sortiesOrganisees = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -57,7 +71,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
-
         return $this;
     }
 
@@ -69,7 +82,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
-
         return $this;
     }
 
@@ -81,7 +93,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTelephone(string $telephone): static
     {
         $this->telephone = $telephone;
-
         return $this;
     }
 
@@ -93,7 +104,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -105,7 +115,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAdministrateur(bool $administrateur): static
     {
         $this->administrateur = $administrateur;
-
         return $this;
     }
 
@@ -117,7 +126,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setActif(bool $actif): static
     {
         $this->actif = $actif;
-
         return $this;
     }
 
@@ -156,13 +164,39 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
 
     #[\Deprecated]
     public function eraseCredentials(): void
     {
-        // @deprecated, à utiliser si tu stockes temporairement des données sensibles
+        // @deprecated, pour stocker temporairement des données sensibles.
+    }
+
+    /**
+     * @return Collection<int, Sortie>
+     */
+    public function getSortiesOrganisees(): Collection
+    {
+        return $this->sortiesOrganisees;
+    }
+
+    public function addSortieOrganisee(Sortie $sortie): static
+    {
+        if (!$this->sortiesOrganisees->contains($sortie)) {
+            $this->sortiesOrganisees->add($sortie);
+            $sortie->setOrganisateur($this);
+        }
+        return $this;
+    }
+
+    public function removeSortieOrganisee(Sortie $sortie): static
+    {
+        if ($this->sortiesOrganisees->removeElement($sortie)) {
+            if ($sortie->getOrganisateur() === $this) {
+                $sortie->setOrganisateur(null);
+            }
+        }
+        return $this;
     }
 }

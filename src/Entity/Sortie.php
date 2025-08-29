@@ -32,6 +32,11 @@ class Sortie
     #[ORM\Column(nullable: true)]
     private ?int $nbRegistration = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'sortiesOrganised')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $organisateur = null;
+
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $info = null;
 
@@ -196,4 +201,16 @@ class Sortie
     public function setSite(?Site $site): self { $this->site = $site; return $this; }
 
 
+public function getOrganisateur(): ?User
+{
+    return $this->organisateur;
 }
+
+public function setOrganisateur(?User $organisateur): self
+{
+    $this->organisateur = $organisateur;
+
+    return $this;
+}
+}
+

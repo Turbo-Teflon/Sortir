@@ -1,0 +1,5 @@
+- 28/08 : ajout relation Sortie -> Site (FK site_id)
+- 29/08 : corrigé CSRF subscribe (clé = "subscribe" + id)
+- 29/08 : Vérifié désistement avant date limite
+- 29/08 : Vérifier désistement après date limite
+- [TODO] Vérifier les sites à la création d'une sortie

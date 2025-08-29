@@ -9,6 +9,7 @@ use App\Repository\SiteRepository;
 use App\Repository\SortieRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -130,7 +131,7 @@ final class SortieController extends AbstractController
     ): Response {
         // CSRF
         if (!$this->isCsrfTokenValid('desister'.$sortie->getId(), (string) $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Token CSRF invalide');
+            throw $this->createAccessDeniedException('Token CSRF invalid');
         }
         $user = $this->getUser();
         $now  = new \DateTimeImmutable();
@@ -138,6 +139,12 @@ final class SortieController extends AbstractController
         // 1) La sortie ne doit pas avoir commencé.
         if ($sortie->getStartDateTime() !== null && $sortie->getStartDateTime() <= $now) {
             $this->addFlash('warning', 'La sortie a déjà débuté, désistement impossible.');
+            return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+        }
+        // 1 bis) Vérifier l'état autorisé
+        $withdrawStates = [Etat::OU, Etat::CL];
+        if (!in_array($sortie->getEtat(), $withdrawStates, true)) {
+            $this->addFlash('warning', "You can not cancel for the current state.");
             return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
         }
 
@@ -150,7 +157,13 @@ final class SortieController extends AbstractController
         // 3) Se désinscrire.
         $sortie->removeUser($user);
 
-        /* 4) Si la sortie était pleine et donc "Clôturée",
+        // 4) l'organisateur ne peut pas se désister.
+        if ($user === $sortie->getOrganisateur()) {
+            $this->addFlash('warning', "The organizer cannot withdraw.");
+            return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+        }
+
+        /* 5) Si la sortie était pleine et donc "Clôturée",
             on la remet "Ouverte" seulement si la date limite d’inscription n’est pas dépassée,
            et s’il reste de la place.
         */
