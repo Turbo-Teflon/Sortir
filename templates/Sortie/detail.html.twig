@@ -40,16 +40,18 @@
                         {{ sortie.nbRegistration ?? '—' }}
                     </dd>
 
-                    <dt class="col-sm-4">Participants ({{ sortie.participants|length }})</dt>
+                    <dt class="col-sm-4">Users ({{ sortie.users|length }})</dt>
                     <dd class="col-sm-8">
-                        {% if sortie.participants|length > 0 %}
+                        {% if sortie.users|length > 0 %}
                             <ul class="mb-0">
-                                {% for p in sortie.participants %}
+
+                                {% for p in sortie.users %}
                                     <li>
                                         <a href="{{ path('sortie_user_profil', {id: p.id}) }}">
                                             {{ p.prenom }} {{ p.nom }} ({{ p.email }})
                                         </a>
                                     </li>
+
                                 {% endfor %}
                             </ul>
                         {% else %}
@@ -80,8 +82,8 @@
                     is_granted('ROLE_USER')
                     and inscriptionsOuvertes
                     and (sortie.limitDate is null or sortie.limitDate > date())
-                    and (sortie.nbRegistration is null or sortie.participants|length < sortie.nbRegistration)
-                    and (not sortie.participants.contains(app.user))
+                    and (sortie.nbRegistration is null or sortie.users|length < sortie.nbRegistration)
+                    and (not sortie.users.contains(app.user))
                 %}
 
                 {% if can_register %}
@@ -97,9 +99,9 @@
                             Registration is not open.
                         {% elseif sortie.limitDate is not null and sortie.limitDate <= date() %}
                             The registration deadline has passed.
-                        {% elseif sortie.nbRegistration is not null and sortie.participants|length >= sortie.nbRegistration %}
+                        {% elseif sortie.nbRegistration is not null and sortie.users|length >= sortie.nbRegistration %}
                             The outing is full.
-                        {% elseif sortie.participants.contains(app.user) %}
+                        {% elseif sortie.users.contains(app.user) %}
                             You are already registered.
                         {% endif %}
                     </div>
@@ -108,7 +110,7 @@
                 {# 3) Bouton SE DÉSISTER (visible si inscrit et si la sortie n'a pas commencé) #}
                 {% set can_withdraw =
                     is_granted('ROLE_USER')
-                    and sortie.participants.contains(app.user)
+                    and sortie.users.contains(app.user)
                     and (sortie.startDateTime is not null and sortie.startDateTime > date())
                 %}
 
@@ -121,7 +123,7 @@
                     </form>
                 {% else %}
                     {# Indices d'impossibilité de désistement #}
-                    {% if is_granted('ROLE_USER') and sortie.participants.contains(app.user) and sortie.startDateTime is not null and sortie.startDateTime <= date() %}
+                    {% if is_granted('ROLE_USER') and sortie.users.contains(app.user) and sortie.startDateTime is not null and sortie.startDateTime <= date() %}
                         <div class="text-muted small mt-2">The event has already started. Withdrawal is no longer possible.</div>
                     {% endif %}
                 {% endif %}
