@@ -24,8 +24,9 @@ class UserFixtures extends Fixture
         $admin->setPrenom('Système');
         $admin->setTelephone('0600000000');
         $admin->setEmail('admin@campus-eni.fr'); // <-- pour respecter la contrainte de domaine
-        $admin->setAdministrateur(true);
+        $admin->setRoles(['ROLE_ADMIN']);
         $admin->setActif(true);
+        $admin->setPseudo($faker->userName);
         $admin->setPassword($this->hasher->hashPassword($admin, 'admin123'));
         $manager->persist($admin);
 
@@ -44,9 +45,9 @@ class UserFixtures extends Fixture
             $u->setPrenom($prenom);
             $u->setTelephone($faker->numerify('06########'));
             $u->setEmail($email);
-            $u->setAdministrateur(false); // pas de création d'admin dans l'aléatoire.
+            $u->setRoles(['ROLE_USER']); // pas de création d'admin dans l'aléatoire.
             $u->setActif($faker->boolean(95)); // plupart actifs.
-
+            $u->setPseudo($faker->userName);
             $u->setPassword($this->hasher->hashPassword($u, 'password')); // mot de passe de démo
 
             $manager->persist($u);
