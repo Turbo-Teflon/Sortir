@@ -5,10 +5,14 @@
 {% block body %}
 
     <div class="d-flex justify-content-center align-items-center mb-4">
-            <img src="{{ asset('images/' ~ app.user.photo) }}" alt="Photo de profil" width="150" class="rounded-circle me-3 shadow">
+        {% if app.user.photo %}
+            <img src="{{ asset('images/' ~ app.user.photo) }}"
+                 alt="Photo de profil"
+                 width="150"
+                 class="rounded-circle me-3 shadow">
+        {% endif %}
         <h4 class="mb-0">Bonjour {{ app.user.pseudo }}</h4>
     </div>
-
 
 
     <section>
