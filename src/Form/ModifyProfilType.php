@@ -4,9 +4,11 @@ namespace App\Form;
 
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 use Symfony\Component\Validator\Constraints\Length;
 
 class ModifyProfilType extends AbstractType
@@ -35,7 +37,24 @@ class ModifyProfilType extends AbstractType
                 'mapped' => false,
                 'required' => false,
                 'label' => 'Confirmer le mot de passe',
-            ]);
+            ])
+
+            ->add('photo', FileType::class, [
+            'required' => false,
+            'mapped' => false,
+            'constraints' => [
+                new File([
+                    'maxSize' => '1024k',
+                    'maxSizeMessage' => 'Votre fichier est trop lourd !',
+                    'mimeTypes' => [
+                        'image/jpeg',
+                        'image/jpg',
+                        'image/png',
+                    ],
+                    'mimeTypesMessage' => 'Les formats acceptés sont jpeg, jpg, png',
+                ])
+            ]
+        ]);
 
 
         function configureOptions(OptionsResolver $resolver): void
