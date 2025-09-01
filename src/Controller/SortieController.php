@@ -127,9 +127,14 @@ final class SortieController extends AbstractController
     #[Route('/{id<\d+>}', name: '_detail', methods: ['GET'])]
     public function show(Sortie $sortie): Response
     {
+        $u = $this->getUser()->getUserIdentifier();
+        $isPromoter = $u === $sortie->getPromoter()->getUserIdentifier();
+
         return $this->render('sortie/detail.html.twig', [
             'sortie' => $sortie,
             'ETAT_OU' => Etat::OU->value,
+            'user' => $u,
+            'isPromoter' => $isPromoter,
         ]);
     }
 
@@ -163,6 +168,28 @@ final class SortieController extends AbstractController
         return $this->render('sortie/userProfil.html.twig', [
             'user' => $user,
         ]);
+    }
+
+    #[Route('/{id<\d+>}/Canceling', name: '_canceling', methods: ['POST'])]
+    public function cancel(Sortie $sortie, Request $request, EntityManagerInterface $em): Response
+    {
+        // CSRF
+        if (!$this->isCsrfTokenValid('cancel'.$sortie->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide');
+        }
+
+        if ($sortie->getEtat() === Etat::CR->value) {
+            $em->remove($sortie);
+            $this->addFlash('warning', 'Outing is removed from the DB');
+        } else {
+            $sortie->setEtat(Etat::AN->value);
+            $em->persist($sortie);
+            $this->addFlash('success', 'Outing is successfully cancelled.');
+        }
+
+        $em->flush();
+
+        return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
     }
 
     #[Route('/{id<\d+>}/desister', name: '_desister', methods: ['POST'])]
