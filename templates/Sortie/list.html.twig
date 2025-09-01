@@ -3,6 +3,9 @@
 {% block title %}{{ parent() }} - Sorties{% endblock %}
 
 {% block body %}
+
+    <h4>Bonjour {{ app.user.pseudo }}</h4>
+
     <h2>Les sorties à venir</h2>
 
     <section>
@@ -16,6 +19,7 @@
 
     <section class="sorties-list">
         {% for sortie in sorties %}
+
             <div class="card w-50 mb-3 p-3 mx-auto">
 
                 <h3 class="text-center mb-3" style="font-family: 'Comic Sans MS', sans-serif; color: #A0522D">
