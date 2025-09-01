@@ -181,6 +181,7 @@ final class SortieController extends AbstractController
         if ($sortie->getEtat() === Etat::CR->value) {
             $em->remove($sortie);
             $this->addFlash('warning', 'Outing is removed from the DB');
+            return $this->redirectToRoute('sortie_list');
         } else {
             $sortie->setEtat(Etat::AN->value);
             $em->persist($sortie);
