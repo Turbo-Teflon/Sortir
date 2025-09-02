@@ -1,11 +1,79 @@
 {% extends 'base.html.twig' %}
-
-{% block title %}Les Sorties !{% endblock %}
+{% block title %}All outings{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <h1 class="h4 mb-3">All outings</h1>
 
+    <nav class="subnav-wrapper">
+        <div class="subnav-floating">
+            <div class="subnav-scroller" id="site-filter">
+                {% include 'partials/_menu_sites_pills.html.twig' with { sites: sites, activeSite: activeSite } %}
+            </div>
+
+        </div>
+    </nav>
+
+    <p class="text-muted mb-3">
+        Showing: <strong id="filter-label">{{ activeSite == 'all' ? 'all outings' : 'site ' ~ activeSite }}</strong>
+    </p>
+
+    <div id="sorties-grid">
+        {# on rend le fragment #}
+        {% include 'sortie/_grid.html.twig' with { sorties: sorties } %}
+    </div>
+
+    <script>
+        (function () {
+            const container = document.getElementById('sorties-grid');
+            const filter    = document.getElementById('site-filter');
+            const label     = document.getElementById('filter-label');
+
+            function setActive(btn) {
+                [...filter.querySelectorAll('button.pill')].forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+            }
+
+            async function loadSite(site) {
+                const base = '{{ path('sortie_list') }}';
+                const url  = new URL(base, window.location.origin);
+                url.searchParams.set('site', site === 'all' ? 'all' : site);
+
+                const resp = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!resp.ok) throw new Error('AJAX failed: ' + resp.status);
+
+                container.innerHTML = await resp.text();
+                label.textContent = (site === 'all' ? 'all outings' : 'site ' + site);
+                window.history.pushState({ site }, '', url.toString());
+            }
+
+            filter.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-site]');
+                if (!btn) return;
+                setActive(btn);
+                loadSite(btn.dataset.site).catch(console.error);
+            });
+
+            if ('IntersectionObserver' in window) {
+                const wrap = document.querySelector('.subnav-wrapper');
+                const box  = document.querySelector('.subnav-floating');
+                if (wrap && box) {
+                    const sentry = document.createElement('div');
+                    sentry.style.position = 'absolute';
+                    sentry.style.top = '-1px';
+                    sentry.style.height = '1px';
+                    wrap.prepend(sentry);
+                    const io = new IntersectionObserver(([e]) => box.classList.toggle('is-stuck', e.intersectionRatio === 0), { threshold: [0,1] });
+                    io.observe(sentry);
+                }
+            }
+
+            window.addEventListener('popstate', () => {
+                const site = (new URL(window.location.href)).searchParams.get('site') || 'all';
+                const btn  = filter.querySelector(`button[data-site="${site}"]`) || filter.querySelector(`button[data-site="all"]`);
+                if (btn) setActive(btn);
+                label.textContent = (site === 'all' ? 'all outings' : 'site ' + site);
+                loadSite(site).catch(console.error);
+            });
+        })();
+    </script>
 {% endblock %}

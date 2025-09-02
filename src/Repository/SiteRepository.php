@@ -15,6 +15,15 @@ class SiteRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Site::class);
     }
+    public function findAllForMenu(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s.enabled = :on')->setParameter('on', true)
+            ->addOrderBy('s.position', 'ASC')
+            ->addOrderBy('s.name', 'ASC')
+            ->getQuery()->getResult();
+    }
+
 
     //    /**
     //     * @return Site[] Returns an array of Site objects

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\SiteRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -20,6 +21,12 @@ class Site
 
     #[ORM\OneToMany(mappedBy: 'site', targetEntity: Sortie::class)]
     private Collection $sorties;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $enabled = null;
+
+    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    private ?int $position = null;
 
     public function __construct()
     {
@@ -70,6 +77,30 @@ class Site
                 $sortie->setSite(null);
             }
         }
+        return $this;
+    }
+
+    public function isEnabled(): ?bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(?bool $enabled): static
+    {
+        $this->enabled = $enabled;
+
+        return $this;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(?int $position): static
+    {
+        $this->position = $position;
+
         return $this;
     }
 }

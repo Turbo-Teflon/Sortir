@@ -1,0 +1,30 @@
+{# templates/sortie/_grid.html.twig #}
+{% if sorties is empty %}
+    <div class="alert alert-info mb-0">No outings to display.</div>
+{% else %}
+    <div class="row g-3">
+        {% for sortie in sorties %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h5 mb-1">{{ sortie.nom }}</h2>
+                        <div class="small text-muted mb-2">
+                            {{ sortie.startDateTime ? sortie.startDateTime|date('d/m/Y H:i') : '—' }}
+                            • {{ sortie.site ? sortie.site.nom : '—' }}
+                        </div>
+                        <span class="badge text-bg-secondary">{{ sortie.etat }}</span>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                        <a class="btn btn-outline-secondary btn-sm"
+                           href="{{ path('sortie_detail', {'id': sortie.id}) }}">Details</a>
+
+                        <form method="post" action="{{ path('sortie_subscribe', {'id': sortie.id}) }}" class="d-inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('subscribe' ~ sortie.id) }}">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Register</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

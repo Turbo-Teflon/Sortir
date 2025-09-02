@@ -18,33 +18,118 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 
-#[Route('/sortie', name: 'sortie')]
+#[Route('/sortie', name: 'sortie_')]
 final class SortieController extends AbstractController
 {
-    #[Route('/', name: '_home')]
-    public function index(): Response
-    {
+    #[Route('/', name: 'home', methods: ['GET'])]
+    #[Route('/', name: 'sortie_home', methods: ['GET'])]
+    public function home(Request $request,
+                         SortieRepository $repo,
+                         SiteRepository $siteRepo
+                        ): Response {
+        $sites = $siteRepo->findAllForMenu();
+        $siteId = $request->query->getInt('siteId', 0);
+
+        if ($siteId > 0) {
+            $sorties = $repo->findBySiteId($siteId);
+            $last = $repo->findLastBySiteId($siteId, 6);
+        } else {
+            $sorties = $repo->findAllOrdered();
+            $last = $repo->findLast(6);
+        }
+
+        return $this->render('home/index.html.twig', [
+            'last' => $last,
+            'sites'        => $sites,
+            'sorties'      => $sorties,
+            'activeSiteId' => $siteId
+            ]);
+
+    }
+    /**
+     * Page "Toutes les sorties" + filtre AJAX par site (?site=Niort|Quimper|Nantes|Rennes|Ligne|all)
+     */
+    #[Route('/list', name: 'list', methods: ['GET'])]
+    public function list(
+        Request $request,
+        SortieRepository $sortieRepo,
+        SiteRepository $siteRepo
+    ): Response {
+        // 1) Lire le filtre de site (par nom) depuis l’URL
+        $activeSite = $request->query->get('site', 'all');
+        $siteEntity = $activeSite !== 'all' ? $siteRepo->findOneBy(['nom' => $activeSite]) : null;
+
+        /** @var \App\Entity\User|null $me */
+        $me = $this->getUser();
+
+        // 2) Charger les sorties
+        if ($siteEntity) {
+            // Filtre par site sélectionné
+            $sorties = $sortieRepo->findForSiteListing(
+                $siteEntity,
+                $me,
+                false, // onlyMine
+                false, // iAmRegistered
+                false  // iAmNotRegistered
+            );
+        } else {
+            // ALL → prendre toute la liste (méthode utilisé déjà sur home())
+            $sorties = $sortieRepo->findBy([], ['startDateTime' => 'DESC']);
+
+        }
+
+        // 3) Charger la liste des sites depuis la BDD (pour les pills/menus)
+        $sites = $siteRepo->findAll();
+
+        // 4) AJAX → ne renvoie que la grille (fragment en java)
+        if ($request->isXmlHttpRequest()) {
+            $html = $this->renderView('sortie/_grid.html.twig', ['sorties' => $sorties]);
+            return new Response($html);
+        }
+
+        // 5) Requête normale → page complète
         return $this->render('sortie/index.html.twig', [
-            'controller_name' => 'SortieController',
+            'sorties'    => $sorties,
+            'sites'      => $sites,       // ici ce sont des entités Site complètes
+            'activeSite' => $activeSite,  // ici c’est toujours le nom ou 'all'
         ]);
     }
 
-    #[Route('/create', name: '_create')]
+    /**
+     * Création d'une sortie
+     */
+    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]
     public function create(
         Request $request,
         EntityManagerInterface $em,
-        SiteRepository $siteRepo): Response
-    {
+        SiteRepository $siteRepo
+    ): Response {
         $sortie = new Sortie();
 
-        // site par défaut "Ligne"
-        if (null === $sortie->getSite()) {
-            $defaultSite = $siteRepo->findOneBy(['nom' => 'Ligne']);
-            if ($defaultSite) {
-                $sortie->setSite($defaultSite);
+        // Fallback (roue de secours) :
+        // Vérifie si la sortie a déjà un site.
+        // - Si oui → on garde.
+        // - Si non → on essaye d'abord "Ligne".
+        // - Si "Ligne" n'existe pas → on prend le premier site dispo.
+        // - Si aucun site en base → on bloque et on affiche un message.
+        // => But : éviter que site_id = NULL (interdit par la BDD).
+        $site = $sortie->getSite();
+        if (!$site) {
+            // 1) tente "Ligne".
+            $site = $siteRepo->findOneBy(['nom' => 'Ligne']);
+            // 2) sinon, prend le premier site existant.
+            if (!$site) {
+                $site = $siteRepo->findOneBy([]); // n'importe quel site
             }
+            // 3) s'il n'y a vraiment aucun site, bloque proprement.
+            if (!$site) {
+                $this->addFlash('warning', 'No site available. Create a site before creating an exit.');
+                return $this->redirectToRoute('sortie_list');
+            }
+            $sortie->setSite($site);
         }
+        // fin du fallback.
 
         // un seul type de formulaire !
         $form = $this->createForm(CreateSortieType::class, $sortie);
@@ -53,16 +138,23 @@ final class SortieController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $sortie->setEtat(Etat::CR->value);
-            $sortie->setPromoter($user);
-            $em->persist($sortie->getPlace()->getCity());
-            $em->persist($sortie->getPlace());
+            $sortie->setEtat(Etat::OU->value);
+            $sortie->setPromoter($user); // ou setOrganisateur($user) selon ton entité
+
+            // Si ton formulaire crée Ville/Lieu dynamiquement :
+            if ($sortie->getPlace() && $sortie->getPlace()->getCity()) {
+                $em->persist($sortie->getPlace()->getCity());
+            }
+            if ($sortie->getPlace()) {
+                $em->persist($sortie->getPlace());
+            }
+
             $em->persist($sortie);
             $em->flush();
 
             $this->addFlash('success', 'Outing is successfully created.');
 
-            return $this->redirectToRoute('sortie_home');
+            return $this->redirectToRoute('sortie_list');
         }
 
         return $this->render('sortie/create.html.twig', [
@@ -70,7 +162,11 @@ final class SortieController extends AbstractController
         ]);
     }
 
-    #[Route('/{id<\d+>}/inscrire', name: '_inscrire', methods: ['POST'])]
+
+    /**
+     * Inscription à une sortie
+     */
+    #[Route('/{id<\d+>}/inscrire', name: 'subscribe', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function subscribe(
         Sortie $sortie,
@@ -88,43 +184,36 @@ final class SortieController extends AbstractController
         // 1) Check si les inscriptions sont ouvertes.
         if ($sortie->getEtat() !== Etat::OU->value) {
             $this->addFlash('warning', 'Registration is not open for this outing.');
-
-            return $this->redirectToRoute('sortie_home');
+            return $this->redirectToRoute('sortie_list');
         }
 
         // 2) Check si la date limite est respectée.
         if (null !== $sortie->getLimitDate() && $now > $sortie->getLimitDate()) {
             $this->addFlash('warning', 'The registration deadline has passed.');
-
-            return $this->redirectToRoute('sortie_home');
+            return $this->redirectToRoute('sortie_list');
         }
 
         // 3) Check des places dispo pour la sortie.
         if (null !== $sortie->getNbRegistration()
             && $sortie->getUsers()->count() >= $sortie->getNbRegistration()) {
             $this->addFlash('warning', 'Outing is full.');
-
-            return $this->redirectToRoute('sortie_home');
+            return $this->redirectToRoute('sortie_list');
         }
 
         // 4) Check de l'inscription ?
         if ($sortie->getUsers()->contains($user)) {
             $this->addFlash('info', 'You are already registered to this outing.');
-
-            return $this->redirectToRoute('sortie_home');
+            return $this->redirectToRoute('sortie_list');
         }
 
         // Validation de l'inscription
         $sortie->addUser($user);
         $em->flush();
 
-        $this->addFlash(
-            'success',
-            'Inscription à l\'activité "'.$sortie->getNom().'" enregistrée.'
-        );
-
+        $this->addFlash('success', 'Subscribe registered.');
         return $this->redirectToRoute('sortie_list');
     }
+
 
     #[Route('/{id}/import-users', name: '_import_users', methods: ['POST'])]
     public function importUsersToSortie(
@@ -176,7 +265,13 @@ final class SortieController extends AbstractController
     }
 
 
-    #[Route('/{id<\d+>}', name: '_detail', methods: ['GET'])]
+    
+
+    /**
+     * Détail d'une sortie
+     */
+    #[Route('/{id<\d+>}', name: 'detail', methods: ['GET'])]
+
     public function show(Sortie $sortie): Response
     {
         $u = $this->getUser()->getUserIdentifier();
@@ -190,9 +285,15 @@ final class SortieController extends AbstractController
         ]);
     }
 
-    #[Route('/list/{page}', name: '_list', requirements: ['page' => '\d+'], defaults: ['page' => 1], methods: ['GET'])]
-    public function list(SortieRepository $sortieRepository, int $page, ParameterBagInterface $parameters): Response
-    {
+    /**
+     * Archive paginée (séparée de la page liste filtrable)
+     */
+    #[Route('/archive/{page}', name: 'archive', requirements: ['page' => '\d+'], defaults: ['page' => 1], methods: ['GET'])]
+    public function archive(
+        SortieRepository $sortieRepository,
+        int $page,
+        ParameterBagInterface $parameters
+    ): Response {
         $nbPerPage = $parameters->get('sortie')['nb_max'];
 
         $offset = ($page - 1) * $nbPerPage;
@@ -205,16 +306,19 @@ final class SortieController extends AbstractController
         );
 
         $total = $sortieRepository->count([]);
-        $totalPages = ceil($total / $nbPerPage);
+        $totalPages = (int) ceil($total / $nbPerPage);
 
-        return $this->render('Sortie/list.html.twig', [
+        return $this->render('sortie/list.html.twig', [
             'sorties' => $sorties,
             'page' => $page,
             'total_pages' => $totalPages,
         ]);
     }
 
-    #[Route('/user/{id}', name: '_user_profil', methods: ['GET'])]
+    /**
+     * Profil d'un utilisateur
+     */
+    #[Route('/user/{id}', name: 'user_profil', methods: ['GET'])]
     public function userProfil(User $user): Response
     {
         return $this->render('sortie/userProfil.html.twig', [
@@ -222,7 +326,7 @@ final class SortieController extends AbstractController
         ]);
     }
 
-    #[Route('/{id<\d+>}/Canceling', name: '_canceling', methods: ['POST'])]
+    #[Route('/{id<\d+>}/Canceling', name: 'canceling', methods: ['POST'])]
     public function cancel(Sortie $sortie, Request $request, EntityManagerInterface $em): Response
     {
         // CSRF
@@ -246,7 +350,7 @@ final class SortieController extends AbstractController
         return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
     }
 
-    #[Route('/{id<\d+>}/desister', name: '_desister', methods: ['POST'])]
+    #[Route('/{id<\d+>}/desister', name: 'desister', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function desister(
         Sortie $sortie,
@@ -262,8 +366,7 @@ final class SortieController extends AbstractController
 
         // 1) La sortie ne doit pas avoir commencé.
         if (null !== $sortie->getStartDateTime() && $sortie->getStartDateTime() <= $now) {
-            $this->addFlash('warning', 'La sortie a déjà débuté, désistement impossible.');
-
+            $this->addFlash('warning', 'This outing has already started, withdrawal is not possible.');
             return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
         }
 
