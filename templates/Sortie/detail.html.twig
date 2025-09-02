@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Détail de la sortie – {{ sortie.nom }}{% endblock %}
+{% block title %}{{ sortie.nom }}{% endblock %}
 
 
 
@@ -129,6 +129,16 @@
                     {% if is_granted('ROLE_USER') and sortie.users.contains(app.user) and sortie.startDateTime is not null and sortie.startDateTime <= date() %}
                         <div class="text-muted small mt-2">The event has already started. Withdrawal is no longer possible.</div>
                     {% endif %}
+                {% endif %}
+
+                {# 2) Bouton ANNULER #}
+                {# Condition d'annulation #}
+                {% set can_cancel = (isPromoter or is_granted('ROLE_ADMIN')) and ((sortie.etat == 'Ouverte') or (sortie.etat == 'Créée')) %}
+                {% if can_cancel %}
+                <form method="post" action="{{ path('sortie_canceling', {id: sortie.id}) }}" class="d-inline ms-2">
+                    <input type="hidden" name="_token" value="{{ csrf_token('cancel' ~ sortie.id) }}">
+                    <button class="btn btn-danger" onclick="return confirm('Voulez vous annuler la sortie ?')">Annuler</button>
+                </form>
                 {% endif %}
                 {# --------------------------------------------- #}
 

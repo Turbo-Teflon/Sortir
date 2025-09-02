@@ -3,7 +3,17 @@
 {% block title %}{{ parent() }} - Sorties{% endblock %}
 
 {% block body %}
-    <h2>Les sorties à venir</h2>
+
+    <div class="d-flex justify-content-center align-items-center mb-4">
+        {% if app.user.photo %}
+            <img src="{{ asset('images/' ~ app.user.photo) }}"
+                 alt="Photo de profil"
+                 width="150"
+                 class="rounded-circle me-3 shadow">
+        {% endif %}
+        <h4 class="mb-0">Bonjour {{ app.user.pseudo }}</h4>
+    </div>
+
 
     <section>
         {% if page > 1 %}
@@ -16,6 +26,7 @@
 
     <section class="sorties-list">
         {% for sortie in sorties %}
+
             <div class="card w-50 mb-3 p-3 mx-auto">
 
                 <h3 class="text-center mb-3" style="font-family: 'Comic Sans MS', sans-serif; color: #A0522D">
@@ -31,7 +42,7 @@
                     </div>
                     <div>
                         <i class="bi bi-geo-alt me-1 fs-4 icon-bold"></i>
-                        Paris
+                        {{ sortie.place.nom }} - {{ sortie.place.rue }}
                     </div>
                     <div>
                         <i class="bi bi-people me-1 fs-4 icon-bold"></i>
