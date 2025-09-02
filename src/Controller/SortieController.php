@@ -215,7 +215,7 @@ final class SortieController extends AbstractController
     }
 
 
-    #[Route('/{id}/import-users', name: '_import_users', methods: ['POST'])]
+    #[Route('/{id}/import-users', name: 'import_users', methods: ['POST'])]
     public function importUsersToSortie(
         Request $request,
         Sortie $sortie,
