@@ -53,37 +53,45 @@ final class SortieController extends AbstractController
         SortieRepository $sortieRepo,
         SiteRepository $siteRepo
     ): Response {
+        // 1) Lire le filtre de site (par nom) depuis l’URL
         $activeSite = $request->query->get('site', 'all');
         $siteEntity = $activeSite !== 'all' ? $siteRepo->findOneBy(['nom' => $activeSite]) : null;
 
         /** @var \App\Entity\User|null $me */
         $me = $this->getUser();
 
-        $sorties = $sortieRepo->findForSiteListing(
-            $siteEntity,
-            $me,
-            false, // onlyMine
-            false, // iAmRegistered
-            false  // iAmNotRegistered
-        );
+        // 2) Charger les sorties
+        if ($siteEntity) {
+            // Filtre par site sélectionné
+            $sorties = $sortieRepo->findForSiteListing(
+                $siteEntity,
+                $me,
+                false, // onlyMine
+                false, // iAmRegistered
+                false  // iAmNotRegistered
+            );
+        } else {
+            // ALL → prendre toute la liste (méthode utilisé déjà sur home())
+            $sorties = $sortieRepo->findBy([], ['startDateTime' => 'DESC']);
 
-        // 👉 Ici on ne fait plus de tableau en dur ni de array_map : juste un findAll
+        }
+
+        // 3) Charger la liste des sites depuis la BDD (pour les pills/menus)
         $sites = $siteRepo->findAll();
 
-        // Requête AJAX → renvoie seulement la grille (fragment)
+        // 4) AJAX → ne renvoie que la grille (fragment en java)
         if ($request->isXmlHttpRequest()) {
             $html = $this->renderView('sortie/_grid.html.twig', ['sorties' => $sorties]);
             return new Response($html);
         }
 
-        // Requête normale → page complète
+        // 5) Requête normale → page complète
         return $this->render('sortie/index.html.twig', [
             'sorties'    => $sorties,
             'sites'      => $sites,       // ici ce sont des entités Site complètes
             'activeSite' => $activeSite,  // ici c’est toujours le nom ou 'all'
         ]);
     }
-
 
     /**
      * Création d'une sortie
@@ -93,17 +101,33 @@ final class SortieController extends AbstractController
     public function create(
         Request $request,
         EntityManagerInterface $em,
-        SiteRepository $siteRepo): Response
-    {
+        SiteRepository $siteRepo
+    ): Response {
         $sortie = new Sortie();
 
-        // Site par défaut "Ligne" si absent
-        if (null === $sortie->getSite()) {
-            $defaultSite = $siteRepo->findOneBy(['nom' => 'Ligne']);
-            if ($defaultSite) {
-                $sortie->setSite($defaultSite);
+        // Fallback (roue de secours) :
+        // Vérifie si la sortie a déjà un site.
+        // - Si oui → on garde.
+        // - Si non → on essaye d'abord "Ligne".
+        // - Si "Ligne" n'existe pas → on prend le premier site dispo.
+        // - Si aucun site en base → on bloque et on affiche un message.
+        // => But : éviter que site_id = NULL (interdit par la BDD).
+        $site = $sortie->getSite();
+        if (!$site) {
+            // 1) tente "Ligne".
+            $site = $siteRepo->findOneBy(['nom' => 'Ligne']);
+            // 2) sinon, prend le premier site existant.
+            if (!$site) {
+                $site = $siteRepo->findOneBy([]); // n'importe quel site
             }
+            // 3) s'il n'y a vraiment aucun site, bloque proprement.
+            if (!$site) {
+                $this->addFlash('warning', 'No site available. Create a site before creating an exit.');
+                return $this->redirectToRoute('sortie_list');
+            }
+            $sortie->setSite($site);
         }
+        // fin du fallback.
 
         // un seul type de formulaire !
         $form = $this->createForm(CreateSortieType::class, $sortie);
@@ -112,7 +136,7 @@ final class SortieController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $sortie->setEtat(Etat::CR->value);
+            $sortie->setEtat(Etat::OU->value);
             $sortie->setPromoter($user); // ou setOrganisateur($user) selon ton entité
 
             // Si ton formulaire crée Ville/Lieu dynamiquement :
@@ -135,6 +159,7 @@ final class SortieController extends AbstractController
             'sortie_form' => $form,
         ]);
     }
+
 
     /**
      * Inscription à une sortie
@@ -245,7 +270,7 @@ final class SortieController extends AbstractController
         ]);
     }
 
-    #[Route('/{id<\d+>}/Canceling', name: '_canceling', methods: ['POST'])]
+    #[Route('/{id<\d+>}/Canceling', name: 'canceling', methods: ['POST'])]
     public function cancel(Sortie $sortie, Request $request, EntityManagerInterface $em): Response
     {
         // CSRF
