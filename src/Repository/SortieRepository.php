@@ -29,7 +29,7 @@ class SortieRepository extends ServiceEntityRepository
     ): array {
         $qb = $this->createQueryBuilder('s')
             ->leftJoin('s.site', 'site')->addSelect('site')
-            ->leftJoin('s.organisateur', 'orga')->addSelect('orga')
+            ->leftJoin('s.promoter', 'orga')->addSelect('orga')
             ->leftJoin('s.users', 'insc')->addSelect('insc')
             // adapte si tes valeurs d’énum diffèrent
             ->andWhere('s.etat IN (:publiees)')
@@ -42,7 +42,7 @@ class SortieRepository extends ServiceEntityRepository
 
         if ($me) {
             if ($onlyMine) {
-                $qb->andWhere('s.organisateur = :me')->setParameter('me', $me);
+                $qb->andWhere('s.promoter = :me')->setParameter('me', $me);
             }
             // “Je suis / ne suis pas inscrit”
             $qb->leftJoin('s.users', 'my', 'WITH', 'my = :me2')->setParameter('me2', $me);

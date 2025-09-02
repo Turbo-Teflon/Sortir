@@ -1,19 +1,135 @@
-body {
-    background-color: skyblue;
+/* --- Base --- */
+body { background-color: skyblue; }
+
+:root{
+    --header-h: 120px;
+    --gap: 16px;
+    --radius: 14px;
+    --shadow: 0 10px 30px rgba(0,0,0,.12);
+    --border: 1px solid rgba(0,0,0,.06);
 }
 
+/* --- Header --- */
 .entete{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 20px;
-    height: 20px;
+    display:flex; align-items:center; gap:20px;
+    height: var(--header-h);
+    padding: 0 20px;
     font-family: 'Comic Sans MS', sans-serif;
     background: linear-gradient(45deg, #ff6ec7, #fddb92, #6ee7ff);
 }
+.entete__logo{ width:150px; height:150px; }
+.entete__title{ color:#006400; margin:0; }
 
-.entete nav a {
+.entete__nav{
+    position:absolute; right:20px; bottom:8px;
+    display:flex; gap:50px; white-space:nowrap;
+}
+.entete__nav a{
+    color:black; font-size:1.1rem; text-decoration:none;
+}
+.entete__actions a {
     color: black;
-    font-size: 1.5em;
     text-decoration: none;
+    font-size: 1.1rem;
+}
+.entete__actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    margin-left: 50px;
+}
+
+/* --- Subnav flottante --- */
+.subnav-wrapper{
+    position: sticky;
+    top: calc(var(--header-h) + var(--gap));
+    z-index: 1030;
+}
+.subnav-floating{
+    backdrop-filter: blur(6px);
+    background: rgba(255,255,255,.85);
+    border: var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 10px;
+    margin-bottom: var(--gap);
+}
+.subnav-floating.is-stuck{
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 14px 36px rgba(0,0,0,.18);
+}
+.subnav-scroller{
+    display:flex; gap:8px; align-items:center;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin; padding:2px;
+}
+
+/* --- Pills --- */
+.pill{
+    appearance:none;
+    border:1px solid rgba(13,110,253,.35);
+    background:#fff; color:#0d6efd;
+    border-radius:999px; padding:6px 12px;
+    font-size:14px; line-height:1; white-space:nowrap;
+    transition: background .15s, color .15s, box-shadow .15s, transform .05s;
+}
+.pill:hover{ background:#0d6efd; color:#fff; box-shadow:0 6px 18px rgba(13,110,253,.35); transform: translateY(-1px); }
+.pill.is-active{ background:#0d6efd; color:#fff; }
+
+/* --- Dropdown All outings SCOPÉ --- */
+.nav-dd{ position:relative; display:inline-block; }
+.nav-dd__trigger{ position:relative; }
+
+.nav-dd__menu{
+    position:absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    list-style:none; margin:0; padding:8px; min-width: 180px;
+    background: rgba(255,255,255,.97);
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:10px; box-shadow:0 16px 36px rgba(0,0,0,.18);
+    backdrop-filter: blur(6px); z-index: 2000;
+    opacity:0; pointer-events:none; transform: translateY(6px);
+    transition: opacity .18s ease, transform .18s ease;
+}
+.nav-dd__menu a{
+    display:block; padding:6px 10px; color:#0d6efd; text-decoration:none; border-radius:8px;
+}
+.nav-dd__menu a:hover{ background:#0d6efd; color:#fff; }
+
+.nav-dd:hover .nav-dd__menu,
+.nav-dd:focus-within .nav-dd__menu,
+.nav-dd.open .nav-dd__menu{ opacity:1; pointer-events:auto; transform: translateY(0); }
+/* Étend la zone de hover vers le bas pour éviter la coupure lors du passage souris */
+.nav-dd{ position: relative; }
+.nav-dd::after{
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 100%;
+    height: 14px;           /* le “pont” invisible */
+    /* pas de background → invisible, mais fait partie de la zone hover */
+}
+#all-outings-flyout > ul.list-unstyled.m-0{
+    position:absolute; top: calc(100% + 8px); left: 0;
+    list-style:none; margin:0; padding:8px; min-width:180px;
+    background: rgba(255,255,255,.97);
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:10px; box-shadow:0 16px 36px rgba(0,0,0,.18);
+    backdrop-filter: blur(6px); z-index:2000;
+    opacity:0; pointer-events:none; transform: translateY(6px);
+    transition: opacity .18s ease, transform .18s ease;
+}
+/* Affichage au survol / focus / ouverture via la classe .open déjà gérée par ton JS */
+#all-outings-flyout:hover > ul.list-unstyled.m-0,
+#all-outings-flyout:focus-within > ul.list-unstyled.m-0,
+#all-outings-flyout.open > ul.list-unstyled.m-0{
+    opacity:1; pointer-events:auto; transform: translateY(0);
+}
+/* Styles des liens à l'intérieur du menu "All outings" */
+#all-outings-flyout .dropdown-item{
+    display:block; padding:6px 10px; color:#0d6efd; text-decoration:none; border-radius:8px;
+}
+#all-outings-flyout .dropdown-item:hover{
+    background:#0d6efd; color:#fff;
 }

@@ -1,0 +1,12 @@
+<button type="button"
+        class="pill {{ activeSite == 'all' ? 'is-active' : '' }}"
+        data-site="all">All</button>
+
+{% for site in sites %}
+    <button type="button"
+            class="pill {{ activeSite == site.nom ? 'is-active' : '' }}"
+            data-site="{{ site.nom }}">
+        {{ site.nom }}
+    </button>
+{% endfor %}
+

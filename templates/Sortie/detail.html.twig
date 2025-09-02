@@ -89,7 +89,7 @@
                 %}
 
                 {% if can_register %}
-                    <form method="post" action="{{ path('sortie_inscrire', {id: sortie.id}) }}" class="d-inline">
+                    <form method="post" action="{{ path('sortie_subscribe', {id: sortie.id}) }}" class="d-inline">
                         <input type="hidden" name="_token" value="{{ csrf_token('subscribe' ~ sortie.id) }}">
                         <button class="btn btn-primary">Register</button>
                     </form>
