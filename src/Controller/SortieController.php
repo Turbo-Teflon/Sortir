@@ -13,8 +13,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('/sortie', name: 'sortie')]
 final class SortieController extends AbstractController
@@ -123,6 +125,56 @@ final class SortieController extends AbstractController
 
         return $this->redirectToRoute('sortie_list');
     }
+
+    #[Route('/{id}/import-users', name: '_import_users', methods: ['POST'])]
+    public function importUsersToSortie(
+        Request $request,
+        Sortie $sortie,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher,
+        SerializerInterface $serializer
+    ): Response {
+        $file = $request->files->get('csvFile');
+
+
+        if ($file) {
+            $csvContent = file_get_contents($file->getPathname());
+
+            if (strtolower($file->getClientOriginalExtension()) !== 'csv') {
+                $this->addFlash('warning', 'Le fichier doit être un CSV.');
+                return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+            }
+
+            /** @var User[] $users */
+            $context = [
+                'csv_delimiter' => ';',
+            ];
+            $users = $serializer->deserialize($csvContent, User::class.'[]', 'csv',$context);
+
+            foreach ($users as $user) {
+                $email = $user->getEmail();
+                if (!str_ends_with($email, '@campus-eni.fr')) {
+                    continue;
+                }
+                $userExist = $em->getRepository(User::class)->findOneBy(['email' => $user->getEmail()]);
+                if (!$userExist) {
+                    $user->setPassword(
+                        $passwordHasher->hashPassword($user, $user->getPassword())
+                    );
+                    $em->persist($user);
+                    $sortie->addUser($user);
+                }
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Les utilisateurs du CSV ont été inscrits à la sortie.');
+        } else {
+            $this->addFlash('warning', 'Aucun fichier CSV fourni.');
+        }
+
+        return $this->redirectToRoute('sortie_list', ['id' => $sortie->getId()]);
+    }
+
 
     #[Route('/{id<\d+>}', name: '_detail', methods: ['GET'])]
     public function show(Sortie $sortie): Response
