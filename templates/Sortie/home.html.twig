@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+
+{% block title %}Sorties par site{% endblock %}
+
+{% block body %}
+
+
+
+
+    <div class="col-md-8 d-flex flex-column align-items-center mx-auto">
+        <h4>The last 5 opened outings</h4>
+        <div class="list-group w-50">
+            {% for s in sorties %}
+                <a class="list-group-item list-group-item-action my-3 text-center" href="{{ path('sortie_detail', {id: s.id}) }}">
+                    <div class="d-flex flex-column align-items-center">
+                        <div>
+                            <strong>{{ s.nom }}</strong>
+                            <span class="badge text-bg-secondary ms-2">{{ s.etat }}</span>
+                            <div class="small text-muted">
+                                {{ s.site ? s.site.nom : '—' }} •
+                                {{ s.startDateTime ? s.startDateTime|date('d/m/Y H:i') : '—' }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            {% else %}
+                <div class="alert alert-info text-center">No outing yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+{% endblock %}
