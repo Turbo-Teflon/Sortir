@@ -41,12 +41,12 @@ class UpdateSortieStatusCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $io->title('Début de la mise à jour des statuts de sorties');
-        $ou = Etat::OU->value;
 
         // 1. On cherche les sorties à mettre à jour
         $sortiesToUpdate = $this->sortieRepository->createQueryBuilder('s')
-            ->where("s.etat = ${$ou}")
+            ->where('s.etat = :ouvert')
             ->andWhere('s.start_date_time <= :now')
+            ->setParameter('ouvert', Etat::OU->value)
             ->setParameter('now', new \DateTime())
             ->getQuery()
             ->getResult();
