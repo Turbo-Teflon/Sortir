@@ -30,10 +30,10 @@ final class SortieController extends AbstractController
 
         if ($siteId > 0) {
             $sorties = $repo->findBySiteId($siteId);
-            $last = $repo->findLastBySiteId($siteId, 6);
+            $last = $repo->findBy(['site' => $siteId], ['startDateTime' => 'DESC'], 6);
         } else {
-            $sorties = $repo->findAllOrdered();
-            $last = $repo->findLast(6);
+            $sorties = $repo->findBy([], ['startDateTime' => 'DESC']);
+            $last = $repo->findBy([], ['startDateTime' => 'DESC'], 6);
         }
 
         return $this->render('home/index.html.twig', [
@@ -159,7 +159,40 @@ final class SortieController extends AbstractController
             'sortie_form' => $form,
         ]);
     }
+    #[Route('/myOutings', name: 'myOutings', methods: ['GET'])]
+    public function myCreated(SortieRepository $sortieRepo): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_USER');
+        $me = $this->getUser();
 
+        $sorties = $sortieRepo->findBy(
+            ['promoter' => $me],
+            ['startDateTime' => 'DESC']
+        );
+
+        return $this->render('sortie/myOutings.html.twig', [
+            'sorties' => $sorties,
+        ]);
+    }
+
+// MES PARTICIPATIONS
+    #[Route('/participatingOutings', name: 'myParticipating', methods: ['GET'])]
+    public function myParticipating(SortieRepository $sortieRepo): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_USER');
+        $me = $this->getUser();
+
+        $sorties = $sortieRepo->createQueryBuilder('s')
+            ->andWhere(':me MEMBER OF s.users')       // je suis inscrit
+            ->setParameter('me', $me)
+            ->orderBy('s.startDateTime', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('sortie/participatingOutings.html.twig', [
+            'sorties' => $sorties,
+        ]);
+    }
 
     /**
      * Inscription à une sortie

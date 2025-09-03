@@ -20,7 +20,7 @@ class SiteRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('s')
             ->andWhere('s.enabled = :on')->setParameter('on', true)
             ->addOrderBy('s.position', 'ASC')
-            ->addOrderBy('s.name', 'ASC')
+            ->addOrderBy('s.nom', 'ASC')
             ->getQuery()->getResult();
     }
 
