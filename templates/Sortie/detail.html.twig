@@ -120,7 +120,7 @@
                 {% if can_withdraw %}
                     <form method="post" action="{{ path('sortie_desister', {id: sortie.id}) }}" class="d-inline ms-2">
                         <input type="hidden" name="_token" value="{{ csrf_token('desister' ~ sortie.id) }}">
-                        <button class="btn btn-warning" onclick="return confirm('Confirmer le désistement ?')">
+                        <button class="btn btn-warning" onclick="return confirm('Confirm cancel ?')">
                             Se désister
                         </button>
                     </form>
@@ -137,7 +137,7 @@
                 {% if can_cancel %}
                 <form method="post" action="{{ path('sortie_canceling', {id: sortie.id}) }}" class="d-inline ms-2">
                     <input type="hidden" name="_token" value="{{ csrf_token('cancel' ~ sortie.id) }}">
-                    <button class="btn btn-danger" onclick="return confirm('Voulez vous annuler la sortie ?')">Annuler</button>
+                    <button class="btn btn-danger" onclick="return confirm('Do you want to cancel this outing ?')">Annuler</button>
                 </form>
                 {% endif %}
                 {# --------------------------------------------- #}
