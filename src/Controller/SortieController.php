@@ -304,7 +304,7 @@ final class SortieController extends AbstractController
      * Détail d'une sortie
      */
     #[Route('/{id<\d+>}', name: 'detail', methods: ['GET'])]
-
+    #[IsGranted('ROLE_USER')]
     public function show(Sortie $sortie): Response
     {
         $u = $this->getUser()->getUserIdentifier();
