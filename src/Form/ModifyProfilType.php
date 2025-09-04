@@ -23,6 +23,12 @@ class ModifyProfilType extends AbstractType
             ->add('pseudo', null, [
                 'label' => 'Pseudo',
             ])
+
+            ->add('description', null, [
+                'label' => 'Description',
+                'required' => false,
+                'attr' => ['rows' => 4],
+            ])
             ->add('email')
             ->add('telephone')
             ->add('password', PasswordType::class, [

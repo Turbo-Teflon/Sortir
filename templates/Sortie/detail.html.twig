@@ -153,6 +153,12 @@
                     </form>
                 {% endif %}
 
+                <hr class="my-4">
+                {% if is_granted('ROLE_ADMIN') %}
+                <div class="mt-3">
+                    <a href="{{ path('sortie_add_user', {id: sortie.id}) }}" class="btn btn-primary">Add a user</a>
+                </div>
+                {% endif %}
 
             </div>
         </div>

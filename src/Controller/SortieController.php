@@ -6,17 +6,20 @@ use App\Entity\Etat;
 use App\Entity\Sortie;
 use App\Entity\User;
 use App\Form\CreateSortieType;
+use App\Form\ModifyProfilType;
 use App\Repository\SiteRepository;
 use App\Repository\SortieRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/sortie', name: 'sortie_')]
 final class SortieController extends AbstractController
@@ -295,6 +298,70 @@ final class SortieController extends AbstractController
         }
 
         return $this->redirectToRoute('sortie_list', ['id' => $sortie->getId()]);
+    }
+
+
+    #[Route('/{id}/addUser', name: 'add_user')]
+    public function register(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher, SluggerInterface $slugger, Sortie $sortie,): Response
+    {
+        $user = new User();
+        $user->setActif(true);
+        $form = $this->createForm(ModifyProfilType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $plainPassword = $form->get('password')->getData();
+            $confirmPassword = $form->get('confirm_password')->getData();
+
+            /** @var UploadedFile $file */
+            $file = $form->get('photo')->getData();
+
+            if ($file instanceof UploadedFile) {
+                /** @var UploadedFile $brochureFile */
+                $brochureFile = $form->get('photo')->getData();
+
+
+                if ($brochureFile) {
+                    $originalFilename = pathinfo($brochureFile->getClientOriginalName(), PATHINFO_FILENAME);
+
+                    $safeFilename = $slugger->slug($originalFilename);
+
+                    $uploadDir = $this->getParameter('uploads_directory');
+
+                    $file->move($uploadDir, $safeFilename);
+
+                    $user->setPhoto($safeFilename);
+                }
+
+
+            }
+
+
+            if ($plainPassword) {
+                if ($plainPassword === $confirmPassword) {
+                    $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
+                    $user->setPassword($hashedPassword);
+                } else {
+                    $this->addFlash('error', 'Les mots de passe ne correspondent pas.');
+
+                    return $this->render('sortie/addUserSortie.html.twig', [
+                        'addUser' => $form,
+                    ]);
+                }
+            }
+
+            $entityManager->persist($user);
+            $sortie->addUser($user);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Utilisateur ajouté avec succès !');
+
+            return $this->redirectToRoute('home');
+        }
+
+        return $this->render('sortie/addUserSortie.html.twig', [
+            'addUser' => $form,
+        ]);
     }
 
 
