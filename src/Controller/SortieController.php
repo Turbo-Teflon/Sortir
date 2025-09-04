@@ -297,9 +297,6 @@ final class SortieController extends AbstractController
         return $this->redirectToRoute('sortie_list', ['id' => $sortie->getId()]);
     }
 
-
-    
-
     /**
      * Détail d'une sortie
      */
