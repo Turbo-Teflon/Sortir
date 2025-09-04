@@ -20,6 +20,12 @@ class SortieRepository extends ServiceEntityRepository
     /**
      * @return Sortie[]
      */
+    /*version enum:
+
+    enum ViewMode { case ALL; case MINE; case REGISTERED; case NOT_REGISTERED; }
+    public function findForSiteListing(?Site $site, ?Utilisateur $me, ViewMode $mode): array
+    ?objet $me devient ?User $me*/
+
     public function findForSiteListing(
         ?Site $site,
         ?object $me, // Participant/User
