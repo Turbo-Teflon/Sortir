@@ -15,12 +15,12 @@ use App\Entity\Etat;
 
 #[AsCommand(
     name: 'app:update-sortie-status',
-    description: 'Add a short description for your command',
+    description: 'update sortie status',
 )]
 class UpdateSortieStatusCommand extends Command
 {
-    private $entityManager;
-    private $sortieRepository;
+    private EntityManagerInterface $entityManager;
+    private SortieRepository $sortieRepository;
 
     public function __construct(EntityManagerInterface $entityManager, SortieRepository $sortieRepository)
     {

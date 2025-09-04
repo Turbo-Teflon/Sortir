@@ -6,6 +6,7 @@ use App\Entity\Etat;
 use App\Entity\Sortie;
 use App\Entity\User;
 use App\Form\CreateSortieType;
+use App\Repository\CityRepository;
 use App\Repository\SiteRepository;
 use App\Repository\SortieRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -103,7 +104,8 @@ final class SortieController extends AbstractController
     public function create(
         Request $request,
         EntityManagerInterface $em,
-        SiteRepository $siteRepo
+        SiteRepository $siteRepo,
+        CityRepository $cityRepo,
     ): Response {
         $sortie = new Sortie();
 
@@ -138,12 +140,18 @@ final class SortieController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $sortie->setEtat(Etat::OU->value);
+            $sortie->setEtat(Etat::CR->value);
             $sortie->setPromoter($user); // ou setOrganisateur($user) selon ton entité
 
             // Si ton formulaire crée Ville/Lieu dynamiquement :
             if ($sortie->getPlace() && $sortie->getPlace()->getCity()) {
-                $em->persist($sortie->getPlace()->getCity());
+                // Si la ville existe déja, linker la ville à la sortie
+                if ($cityRepo->existsCity($sortie->getPlace()->getCity())) {
+                    $city = $cityRepo->findOneBy(['name' => $sortie->getPlace()->getCity()->getName(), 'postCode' => $sortie->getPlace()->getCity()->getPostCode()]);
+                    $sortie->getPlace()->setCity($city);
+                }else {
+                    $em->persist($sortie->getPlace()->getCity());
+                }
             }
             if ($sortie->getPlace()) {
                 $em->persist($sortie->getPlace());

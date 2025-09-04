@@ -16,6 +16,20 @@ class CityRepository extends ServiceEntityRepository
         parent::__construct($registry, City::class);
     }
 
+    public function existsCity(City $city): bool
+    {
+        $queryResult = $this->createQueryBuilder('c')
+            ->where('c.name = :name')
+            ->andWhere('c.postCode = :postCode')
+            ->setParameter('name', $city->getName())
+            ->setParameter('postCode', $city->getPostCode())
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return !empty($queryResult);
+
+    }
+
     //    /**
     //     * @return City[] Returns an array of City objects
     //     */
