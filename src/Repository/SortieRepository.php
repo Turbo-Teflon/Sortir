@@ -62,7 +62,14 @@ class SortieRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-
+    public function countUserInSortie(Sortie $sortie): int
+    {
+        $sql = 'SELECT * FROM outing_user o WHERE o.sortie_id = :sortie_id';
+        return $this->getEntityManager()->createQuery($sql)
+            ->setParameter('sortie_id', $sortie->getId())
+            ->getResult()
+            ->count();
+    }
 
 //    /**
 //     * @return Sortie[] Returns an array of Sortie objects
