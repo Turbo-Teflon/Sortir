@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Place;
+use App\Entity\Site;
 use App\Entity\Sortie;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -35,6 +36,15 @@ class CreateSortieType extends AbstractType
             ->add('nbRegistration')
             ->add('info')
             ->add('place', PlaceType::class)
+
+            ->add("site", EntityType::class, [
+                'class' => Site::class,
+                'label' => "site lié à l'évenement",
+                'choice_label' => 'nom',
+                'placeholder' => 'Choisissez un campus',
+                'required' => true,
+            ])
+
             ->add('submit', SubmitType::class, [
                 'label' => 'Enregistrer',
             ]);

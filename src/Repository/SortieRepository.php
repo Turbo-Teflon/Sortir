@@ -21,7 +21,6 @@ class SortieRepository extends ServiceEntityRepository
      * @return Sortie[]
      */
     /*version enum:
-
     enum ViewMode { case ALL; case MINE; case REGISTERED; case NOT_REGISTERED; }
     public function findForSiteListing(?Site $site, ?Utilisateur $me, ViewMode $mode): array
     ?objet $me devient ?User $me*/
@@ -37,9 +36,9 @@ class SortieRepository extends ServiceEntityRepository
             ->leftJoin('s.site', 'site')->addSelect('site')
             ->leftJoin('s.promoter', 'orga')->addSelect('orga')
             ->leftJoin('s.users', 'insc')->addSelect('insc')
-            // adapte si tes valeurs d’énum diffèrent
-            ->andWhere('s.etat IN (:publiees)')
-            ->setParameter('publiees', [\App\Entity\Etat::OU->value, \App\Entity\Etat::CL->value, \App\Entity\Etat::EC->value ?? 'AC'])
+
+//            ->andWhere('s.etat IN (:publiees)')
+//            ->setParameter('publiees', [\App\Entity\Etat::OU->value, \App\Entity\Etat::CL->value, \App\Entity\Etat::EC->value ?? 'AC'])
             ->orderBy('s.startDateTime', 'ASC');
 
         if ($site) {
@@ -62,7 +61,14 @@ class SortieRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-
+    public function countUserInSortie(Sortie $sortie): int
+    {
+        $sql = 'SELECT * FROM outing_user o WHERE o.sortie_id = :sortie_id';
+        return $this->getEntityManager()->createQuery($sql)
+            ->setParameter('sortie_id', $sortie->getId())
+            ->getResult()
+            ->count();
+    }
 
 //    /**
 //     * @return Sortie[] Returns an array of Sortie objects

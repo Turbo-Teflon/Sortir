@@ -27,10 +27,11 @@ final class SortieController extends AbstractController
 {
     #[Route('/', name: 'home', methods: ['GET'])]
     #[Route('/', name: 'sortie_home', methods: ['GET'])]
-    public function home(Request $request,
+    public function home(Request          $request,
                          SortieRepository $repo,
-                         SiteRepository $siteRepo
-                        ): Response {
+                         SiteRepository   $siteRepo
+    ): Response
+    {
         $sites = $siteRepo->findAllForMenu();
         $siteId = $request->query->getInt('siteId', 0);
 
@@ -44,21 +45,23 @@ final class SortieController extends AbstractController
 
         return $this->render('home/index.html.twig', [
             'last' => $last,
-            'sites'        => $sites,
-            'sorties'      => $sorties,
+            'sites' => $sites,
+            'sorties' => $sorties,
             'activeSiteId' => $siteId
-            ]);
+        ]);
 
     }
+
     /**
      * Page "Toutes les sorties" + filtre AJAX par site (?site=Niort|Quimper|Nantes|Rennes|Ligne|all)
      */
     #[Route('/list', name: 'list', methods: ['GET'])]
     public function list(
-        Request $request,
+        Request          $request,
         SortieRepository $sortieRepo,
-        SiteRepository $siteRepo
-    ): Response {
+        SiteRepository   $siteRepo
+    ): Response
+    {
         // 1) Lire le filtre de site (par nom) depuis l’URL
         $activeSite = $request->query->get('site', 'all');
         $siteEntity = $activeSite !== 'all' ? $siteRepo->findOneBy(['nom' => $activeSite]) : null;
@@ -93,8 +96,8 @@ final class SortieController extends AbstractController
 
         // 5) Requête normale → page complète
         return $this->render('sortie/index.html.twig', [
-            'sorties'    => $sorties,
-            'sites'      => $sites,       // ici ce sont des entités Site complètes
+            'sorties' => $sorties,
+            'sites' => $sites,       // ici ce sont des entités Site complètes
             'activeSite' => $activeSite,  // ici c’est toujours le nom ou 'all'
         ]);
     }
@@ -105,36 +108,14 @@ final class SortieController extends AbstractController
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]
     public function create(
-        Request $request,
+        Request                $request,
         EntityManagerInterface $em,
-        SiteRepository $siteRepo,
-        CityRepository $cityRepo,
-    ): Response {
+        SiteRepository         $siteRepo,
+        CityRepository         $cityRepo,
+    ): Response
+    {
         $sortie = new Sortie();
 
-        // Fallback (roue de secours) :
-        // Vérifie si la sortie a déjà un site.
-        // - Si oui → on garde.
-        // - Si non → on essaye d'abord "Ligne".
-        // - Si "Ligne" n'existe pas → on prend le premier site dispo.
-        // - Si aucun site en base → on bloque et on affiche un message.
-        // => But : éviter que site_id = NULL (interdit par la BDD).
-        $site = $sortie->getSite();
-        if (!$site) {
-            // 1) tente "Ligne".
-            $site = $siteRepo->findOneBy(['nom' => 'Ligne']);
-            // 2) sinon, prend le premier site existant.
-            if (!$site) {
-                $site = $siteRepo->findOneBy([]); // n'importe quel site
-            }
-            // 3) s'il n'y a vraiment aucun site, bloque proprement.
-            if (!$site) {
-                $this->addFlash('warning', 'No site available. Create a site before creating an exit.');
-                return $this->redirectToRoute('sortie_list');
-            }
-            $sortie->setSite($site);
-        }
-        // fin du fallback.
 
         // un seul type de formulaire !
         $form = $this->createForm(CreateSortieType::class, $sortie);
@@ -152,7 +133,7 @@ final class SortieController extends AbstractController
                 if ($cityRepo->existsCity($sortie->getPlace()->getCity())) {
                     $city = $cityRepo->findOneBy(['name' => $sortie->getPlace()->getCity()->getName(), 'postCode' => $sortie->getPlace()->getCity()->getPostCode()]);
                     $sortie->getPlace()->setCity($city);
-                }else {
+                } else {
                     $em->persist($sortie->getPlace()->getCity());
                 }
             }
@@ -172,6 +153,7 @@ final class SortieController extends AbstractController
             'sortie_form' => $form,
         ]);
     }
+
     #[Route('/myOutings', name: 'myOutings', methods: ['GET'])]
     public function myCreated(SortieRepository $sortieRepo): Response
     {
@@ -213,12 +195,13 @@ final class SortieController extends AbstractController
     #[Route('/{id<\d+>}/inscrire', name: 'subscribe', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function subscribe(
-        Sortie $sortie,
-        Request $request,
+        Sortie                 $sortie,
+        Request                $request,
         EntityManagerInterface $em,
-    ): Response {
+    ): Response
+    {
         // Token CSRF (Cross Site Request Forgery)
-        if (!$this->isCsrfTokenValid('subscribe'.$sortie->getId(), (string) $request->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('subscribe' . $sortie->getId(), (string)$request->request->get('_token'))) {
             throw $this->createAccessDeniedException('Token CSRF invalide');
         }
 
@@ -261,14 +244,14 @@ final class SortieController extends AbstractController
 
     #[Route('/{id}/import-users', name: 'import_users', methods: ['POST'])]
     public function importUsersToSortie(
-        Request $request,
-        Sortie $sortie,
-        EntityManagerInterface $em,
+        Request                     $request,
+        Sortie                      $sortie,
+        EntityManagerInterface      $em,
         UserPasswordHasherInterface $passwordHasher,
-        SerializerInterface $serializer
-    ): Response {
+        SerializerInterface         $serializer
+    ): Response
+    {
         $file = $request->files->get('csvFile');
-
 
         if ($file) {
             $csvContent = file_get_contents($file->getPathname());
@@ -278,11 +261,10 @@ final class SortieController extends AbstractController
                 return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
             }
 
-            /** @var User[] $users */
             $context = [
                 'csv_delimiter' => ';',
             ];
-            $users = $serializer->deserialize($csvContent, User::class.'[]', 'csv',$context);
+            $users = $serializer->deserialize($csvContent, User::class . '[]', 'csv', $context);
 
             foreach ($users as $user) {
                 $email = $user->getEmail();
@@ -290,7 +272,15 @@ final class SortieController extends AbstractController
                     continue;
                 }
                 $userExist = $em->getRepository(User::class)->findOneBy(['email' => $user->getEmail()]);
-                if (!$userExist) {
+
+
+                if ($userExist) {
+
+                    if (!$sortie->getUsers()->contains($userExist)) {
+                        $sortie->addUser($userExist);
+                    }
+                } else {
+
                     $user->setPassword(
                         $passwordHasher->hashPassword($user, $user->getPassword())
                     );
@@ -307,6 +297,7 @@ final class SortieController extends AbstractController
 
         return $this->redirectToRoute('sortie_list', ['id' => $sortie->getId()]);
     }
+
 
 
     #[Route('/{id}/addUser', name: 'add_user')]
@@ -373,8 +364,6 @@ final class SortieController extends AbstractController
     }
 
 
-
-
     /**
      * Détail d'une sortie
      */
@@ -398,10 +387,11 @@ final class SortieController extends AbstractController
      */
     #[Route('/archive/{page}', name: 'archive', requirements: ['page' => '\d+'], defaults: ['page' => 1], methods: ['GET'])]
     public function archive(
-        SortieRepository $sortieRepository,
-        int $page,
+        SortieRepository      $sortieRepository,
+        int                   $page,
         ParameterBagInterface $parameters
-    ): Response {
+    ): Response
+    {
         $nbPerPage = $parameters->get('sortie')['nb_max'];
 
         $offset = ($page - 1) * $nbPerPage;
@@ -414,7 +404,7 @@ final class SortieController extends AbstractController
         );
 
         $total = $sortieRepository->count([]);
-        $totalPages = (int) ceil($total / $nbPerPage);
+        $totalPages = (int)ceil($total / $nbPerPage);
 
         return $this->render('sortie/list.html.twig', [
             'sorties' => $sorties,
@@ -438,7 +428,7 @@ final class SortieController extends AbstractController
     public function cancel(Sortie $sortie, Request $request, EntityManagerInterface $em): Response
     {
         // CSRF
-        if (!$this->isCsrfTokenValid('cancel'.$sortie->getId(), (string) $request->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('cancel' . $sortie->getId(), (string)$request->request->get('_token'))) {
             throw $this->createAccessDeniedException('Token CSRF invalide');
         }
 
@@ -461,12 +451,13 @@ final class SortieController extends AbstractController
     #[Route('/{id<\d+>}/desister', name: 'desister', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function desister(
-        Sortie $sortie,
-        Request $request,
+        Sortie                 $sortie,
+        Request                $request,
         EntityManagerInterface $em,
-    ): Response {
+    ): Response
+    {
         // CSRF
-        if (!$this->isCsrfTokenValid('desister'.$sortie->getId(), (string) $request->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('desister' . $sortie->getId(), (string)$request->request->get('_token'))) {
             throw $this->createAccessDeniedException('Token CSRF invalide');
         }
         $user = $this->getUser();
@@ -544,4 +535,5 @@ final class SortieController extends AbstractController
             ],
         ]);
     }
+
 }
