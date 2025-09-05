@@ -69,7 +69,7 @@
 
                 <hr class="my-4">
 
-                {# --------- INSCRIPTION / DESISTEMENT --------- #}
+                {# --------- OUVERTURE / INSCRIPTION / DESISTEMENT / ANNULATION --------- #}
 
                 {# 1) Ouverture des inscriptions (utilise la constante passée par le contrôleur) #}
                 {% set inscriptionsOuvertes = sortie.etat == ETAT_OU %}
@@ -131,15 +131,28 @@
                     {% endif %}
                 {% endif %}
 
-                {# 2) Bouton ANNULER #}
+                {# 4) Bouton OUVRIR LA SORTIE #}
+                {# Condition d'ouverture #}
+                {% set can_open = (isPromoter or is_granted('ROLE_ADMIN')) and (sortie.etat == 'Créée') %}
+
+                {% if can_open %}
+                    <form method="post" action="{{ path('sortie_opening', {id: sortie.id}) }}" class="d-inline ms-2">
+                        <input type="hidden" name="_token" value="{{ csrf_token('open' ~ sortie.id) }}">
+                        <button class="btn btn-primary" onclick="return confirm('Do you want to open this outing ?')">Ouvrir au public</button>
+                    </form>
+                {% endif %}
+
+                {# 5) Bouton ANNULER #}
                 {# Condition d'annulation #}
-                {% set can_cancel = (isPromoter or is_granted('ROLE_ADMIN')) and ((sortie.etat == 'Ouverte') or (sortie.etat == 'Créée')) %}
+                {% set can_cancel = (isPromoter or is_granted('ROLE_ADMIN')) and ((sortie.etat == 'Ouverte') or (sortie.etat == 'Créée') or (sortie.etat == 'Cloturé')) %}
                 {% if can_cancel %}
                 <form method="post" action="{{ path('sortie_canceling', {id: sortie.id}) }}" class="d-inline ms-2">
                     <input type="hidden" name="_token" value="{{ csrf_token('cancel' ~ sortie.id) }}">
                     <button class="btn btn-danger" onclick="return confirm('Do you want to cancel this outing ?')">Annuler</button>
                 </form>
                 {% endif %}
+
+
                 {# --------------------------------------------- #}
 
                 <hr class="my-4">

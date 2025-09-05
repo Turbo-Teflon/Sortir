@@ -424,6 +424,25 @@ final class SortieController extends AbstractController
         ]);
     }
 
+    #[Route('/{id<\d+>}/Open', name: 'opening', methods: ['POST'])]
+    public function open(Sortie $sortie, Request $request, EntityManagerInterface $em): Response
+    {
+        // CSRF
+        if (!$this->isCsrfTokenValid('open'.$sortie->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide');
+        }
+
+        if ($sortie->getEtat() === Etat::CR->value) {
+            $sortie->setEtat(Etat::OU->value);
+            $this->addFlash('success', 'Outing successfully Opened !');
+            $em->flush();
+            return $this->redirectToRoute('sortie_detail', ['id' => $sortie->getId()]);
+        }
+        $this->addFlash('danger', 'No Sortie Selected or Invalid Status');
+
+        return $this->redirectToRoute('sortie_list');
+    }
+
     #[Route('/{id<\d+>}/Canceling', name: 'canceling', methods: ['POST'])]
     public function cancel(Sortie $sortie, Request $request, EntityManagerInterface $em): Response
     {
