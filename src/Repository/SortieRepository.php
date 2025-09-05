@@ -37,8 +37,10 @@ class SortieRepository extends ServiceEntityRepository
             ->leftJoin('s.promoter', 'orga')->addSelect('orga')
             ->leftJoin('s.users', 'insc')->addSelect('insc')
 
-            ->andWhere('s.etat IN (:publiees)')
-            ->setParameter('publiees', [\App\Entity\Etat::OU->value, \App\Entity\Etat::CL->value, \App\Entity\Etat::EC->value ?? 'AC'])
+
+//            ->andWhere('s.etat IN (:publiees)')
+//            ->setParameter('publiees', [\App\Entity\Etat::OU->value, \App\Entity\Etat::CL->value, \App\Entity\Etat::EC->value ?? 'AC'])
+
             ->orderBy('s.startDateTime', 'ASC');
 
         if ($site) {
