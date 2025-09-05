@@ -10,6 +10,7 @@ use App\Repository\CityRepository;
 use App\Form\ModifyProfilType;
 use App\Repository\SiteRepository;
 use App\Repository\SortieRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -109,6 +110,7 @@ final class SortieController extends AbstractController
         EntityManagerInterface $em,
         SiteRepository $siteRepo,
         CityRepository $cityRepo,
+        UserRepository $userRepo
     ): Response {
         $sortie = new Sortie();
 
@@ -139,12 +141,14 @@ final class SortieController extends AbstractController
         // un seul type de formulaire !
         $form = $this->createForm(CreateSortieType::class, $sortie);
         $user = $this->getUser();
+        $u = $userRepo->findOneBy(['email' => $user->getUserIdentifier()]);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $sortie->setEtat(Etat::CR->value);
             $sortie->setPromoter($user); // ou setOrganisateur($user) selon ton entité
+            $sortie->setSite($u->getSite());
 
             // Si ton formulaire crée Ville/Lieu dynamiquement :
             if ($sortie->getPlace() && $sortie->getPlace()->getCity()) {

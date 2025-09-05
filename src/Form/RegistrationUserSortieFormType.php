@@ -2,8 +2,13 @@
 
 namespace App\Form;
 
+use App\Entity\Site;
 use App\Entity\User;
+use App\Repository\SiteRepository;
+use App\Repository\SortieRepository;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -20,7 +25,7 @@ class RegistrationUserSortieFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-
+        $sites =
 
         $builder
             ->add('nom', null, [
@@ -53,6 +58,10 @@ class RegistrationUserSortieFormType extends AbstractType
                 'constraints' => [
                     new NotBlank(['message' => 'Le téléphone est obligatoire.']),
                 ],
+            ])
+            ->add('site', EntityType::class, [
+                'class' => Site::class,
+                'choice_label' => 'Site'
             ])
             ->add('password', PasswordType::class, [
                 'mapped' => false,
