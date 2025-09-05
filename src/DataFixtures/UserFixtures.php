@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Site;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -16,7 +17,10 @@ class UserFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
+        $siteRepository = $manager->getRepository(Site::class);
+        $sites = $siteRepository->findAll();
         $faker = Factory::create('fr_FR');
+
 
         // --- Admin ---
         $admin = new User();
@@ -28,12 +32,13 @@ class UserFixtures extends Fixture
         $admin->setActif(true);
         $admin->setPseudo($faker->userName);
         $admin->setPassword($this->hasher->hashPassword($admin, 'admin123'));
+        $admin->setSite($siteRepository->findOneBy(['nom' => 'Nantes']));
         $manager->persist($admin);
 
         // --- Création de 10 utilisateurs aléatoires ---
         for ($i = 0; $i < 10; ++$i) {
             $u = new User();
-
+            $site = $sites[array_rand($sites)];
             $prenom = $faker->firstName();
             $nom = $faker->lastName();
 
@@ -49,6 +54,7 @@ class UserFixtures extends Fixture
             $u->setActif($faker->boolean(95)); // plupart actifs.
             $u->setPseudo($faker->userName);
             $u->setPassword($this->hasher->hashPassword($u, 'password')); // mot de passe de démo
+            $u->setSite($site);
 
             $manager->persist($u);
         }

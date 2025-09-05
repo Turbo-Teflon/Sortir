@@ -28,9 +28,16 @@ class Site
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
     private ?int $position = null;
 
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'site')]
+    private Collection $users;
+
     public function __construct()
     {
         $this->sorties = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -100,6 +107,36 @@ class Site
     public function setPosition(?int $position): static
     {
         $this->position = $position;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->setSite($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            // set the owning side to null (unless already changed)
+            if ($user->getSite() === $this) {
+                $user->setSite(null);
+            }
+        }
 
         return $this;
     }

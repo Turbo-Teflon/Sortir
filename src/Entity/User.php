@@ -70,6 +70,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $photo = null;
 
+    #[ORM\ManyToOne(inversedBy: 'users')]
+    private ?Site $site = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -247,6 +250,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $promotedSorty->setPromoter(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getSite(): ?Site
+    {
+        return $this->site;
+    }
+
+    public function setSite(?Site $site): static
+    {
+        $this->site = $site;
 
         return $this;
     }
